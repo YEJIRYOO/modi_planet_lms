@@ -1,27 +1,22 @@
-import { useState } from 'react';
-import type { CourseType } from './types';
-import LearningTabs from './components/LearningTabs';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import CourseListPage from './pages/CourseListPage';
+import CourseDetailPage from './pages/CourseDetailPage';
+import LearningPage from './pages/LearningPage';
+import MyPage from './pages/MyPage';
 
 export default function App() {
-  const [type, setType] = useState<CourseType>('HW');
-
   return (
-    <div style={{ height: '100vh', padding: 16, boxSizing: 'border-box', fontFamily: 'system-ui' }}>
-      <div style={{ marginBottom: 12 }}>
-        <span style={{ marginRight: 8 }}>강좌 유형:</span>
-        {(['HW', 'SW', 'HW_SW'] as CourseType[]).map((t) => (
-          <button key={t} onClick={() => setType(t)}
-            style={{ marginRight: 6, padding: '4px 10px',
-              background: type === t ? '#3b82f6' : '#e2e8f0',
-              color: type === t ? '#fff' : '#334155',
-              border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-            {t}
-          </button>
-        ))}
-      </div>
-      <div style={{ height: 'calc(100% - 48px)' }}>
-        <LearningTabs courseType={type} codeEditorMode="" locale="ko" />
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/courses" element={<CourseListPage />} />
+        <Route path="/courses/:id" element={<CourseDetailPage />} />
+        <Route path="/learning/:id" element={<LearningPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
