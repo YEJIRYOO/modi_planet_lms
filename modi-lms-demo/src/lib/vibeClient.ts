@@ -19,10 +19,16 @@ export interface FlowNode {
 }
 export interface LearningNote { title: string; what: string; why: string; where: string; }
 export interface ModiModule { key: string; role: string; reason: string; count: number; }
+export interface ModiLayoutItem {
+  key: string;
+  pos: [number, number];
+  rotation?: number;
+  attachments?: Record<string, string>;
+}
 export interface ModiModules {
   modules: ModiModule[];
   assembly?: string[];
-  layout?: unknown[];
+  layout?: ModiLayoutItem[];
   title?: string;
   description?: string;
 }
@@ -111,4 +117,3 @@ export async function streamChat(
     }
   }
 }
-

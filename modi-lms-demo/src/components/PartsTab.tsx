@@ -25,8 +25,22 @@ function ModuleIcon({ mkey, size = 48 }: { mkey: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   const img = moduleImg(mkey);
   const name = moduleName(mkey);
+  const isMotor = mkey === 'motor_a' || mkey === 'motor_b';
   if (img && !failed) {
-    return <img src={img} alt={name} onError={() => setFailed(true)} style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} />;
+    return (
+      <span style={{ position: 'relative', width: size, height: size, flex: `0 0 ${size}px`, overflow: 'hidden', display: 'block' }}>
+        <img
+          src={img}
+          alt={name}
+          onError={() => setFailed(true)}
+          style={{
+            position: 'absolute', left: '50%', top: '50%',
+            width: isMotor ? '135%' : '185%', height: isMotor ? '135%' : '185%',
+            maxWidth: 'none', objectFit: 'contain', transform: 'translate(-40%, -50%)', display: 'block',
+          }}
+        />
+      </span>
+    );
   }
   return (
     <div style={{ width: size, height: size, borderRadius: 12, background: t.coralSoft, color: t.coralStrong, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: Math.round(size * 0.36) }}>
@@ -40,26 +54,25 @@ function AssemblyDiagram({ layout }: { layout: ModiLayoutItem[] }) {
   const rows = layout.map((l) => l.pos[1]);
   const minC = Math.min(...cols), maxC = Math.max(...cols);
   const minR = Math.min(...rows), maxR = Math.max(...rows);
-  const cell = 84;
+  const cell = 80;
   const width = (maxC - minC) * cell + cell;
   const height = (maxR - minR) * cell + cell;
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 12, background: t.warm, borderRadius: t.rMd, marginBottom: 20, overflow: 'auto' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 12, borderRadius: t.rMd, marginBottom: 20, overflow: 'auto' }}>
       <div style={{ position: 'relative', width, height }}>
         {layout.map((l, i) => {
           const left = (l.pos[0] - minC) * cell;
           const top = (l.pos[1] - minR) * cell;
-          const hasWheel = l.attachments && Object.values(l.attachments).includes('wheel');
           return (
-            <div key={i} style={{ position: 'absolute', left, top, width: cell - 10, height: cell - 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, border: `1px solid ${t.line}`, borderRadius: 12, background: t.surface, boxShadow: t.shSm }}>
+            <div
+              key={i}
+              title={`${moduleName(l.key)}${l.rotation ? ` · ${l.rotation}°` : ''}`}
+              style={{ position: 'absolute', left, top, width: cell, height: cell, display: 'grid', placeItems: 'center' }}
+            >
               <div style={{ transform: l.rotation ? `rotate(${l.rotation}deg)` : undefined }}>
-                <ModuleIcon mkey={l.key} size={36} />
+                <ModuleIcon mkey={l.key} size={132} />
               </div>
-              <span style={{ fontSize: 10, color: t.muted, textAlign: 'center', lineHeight: 1.1 }}>{moduleName(l.key)}</span>
-              {(l.rotation || hasWheel) && (
-                <span style={{ fontSize: 9, color: t.coralStrong }}>{l.rotation ? `${l.rotation}° ` : ''}{hasWheel ? '바퀴' : ''}</span>
-              )}
             </div>
           );
         })}
@@ -84,17 +97,17 @@ export default function PartsTab({ result }: { result: VibeResult | null }) {
       )}
 
       <div style={sectionTitle}>필요한 모듈 · 부품</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 8, marginBottom: 20 }}>
         {modi.modules.map((m, i) => {
           const rc = ROLE_COLOR[m.role] ?? ROLE_COLOR['부품'];
           return (
             <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', border: `1px solid ${t.line}`, borderRadius: t.rSm, padding: '10px 12px', background: t.surface }}>
-              <ModuleIcon mkey={m.key} size={44} />
+              <ModuleIcon mkey={m.key} size={72} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                  <strong>{moduleName(m.key)}</strong>
-                  <span style={{ background: rc.bg, color: rc.fg, padding: '1px 8px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>{m.role}</span>
-                  <span style={{ marginLeft: 'auto', color: t.muted, fontSize: 13 }}>×{m.count}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, whiteSpace: 'nowrap' }}>
+                  <strong style={{ whiteSpace: 'nowrap' }}>{moduleName(m.key)}</strong>
+                  <span style={{ flex: '0 0 auto', whiteSpace: 'nowrap', background: rc.bg, color: rc.fg, padding: '1px 8px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>{m.role}</span>
+                  <span style={{ flex: '0 0 auto', marginLeft: 'auto', color: t.muted, fontSize: 13 }}>×{m.count}</span>
                 </div>
                 <div style={{ color: t.muted, fontSize: 13, lineHeight: 1.5 }}>{m.reason}</div>
               </div>
