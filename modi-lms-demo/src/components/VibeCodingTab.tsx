@@ -1,10 +1,11 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { streamChat, type VibeMode, type CodingType, type CodeLangs, type VibeEvent, type VibeResult } from '../lib/vibeClient';
 import type { CourseType } from '../types';
+import { buildPreviewSrcDoc, primaryFile } from '../lib/preview';
 import { t } from '../styles/tokens';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
@@ -16,7 +17,7 @@ const CODE_TABS: { key: keyof CodeLangs; label: string; lang: string }[] = [
   { key: 'c', label: 'main.c', lang: 'c' },
 ];
 
-// 마크다운 → 실제 요소로 렌더 (children만 받아 node 등 불필요한 prop 유출 방지)
+// 마크다운 → 실제 요소 (children만 받아 불필요한 prop 유출 방지)
 const hStyle: CSSProperties = { fontWeight: 700, fontSize: 15, margin: '10px 0 6px', color: t.ink };
 const md: Components = {
   p: ({ children }) => <p style={{ margin: '0 0 8px' }}>{children}</p>,
@@ -30,25 +31,55 @@ const md: Components = {
   h3: ({ children }) => <div style={hStyle}>{children}</div>,
   a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: t.coralStrong }}>{children}</a>,
   code: ({ children }) => (
-    <code style={{ display: 'inline', background: t.soft, padding: '1px 5px', borderRadius: 4, fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 13, color: t.ink }}>
-      {children}
-    </code>
+    <code style={{ display: 'inline', background: t.soft, padding: '1px 5px', borderRadius: 4, fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 13, color: t.ink }}>{children}</code>
   ),
 };
 
+// 코드 하이라이팅 블록 (라인번호 + 왼쪽정렬)
+function Hi({ code, lang }: { code: string; lang: string }) {
+  return (
+    <Highlight theme={themes.vsDark} code={code} language={lang}>
+      {({ tokens, getLineProps, getTokenProps }) => (
+        <pre style={{ margin: 0, padding: '14px 0', textAlign: 'left', background: 'transparent', color: '#c9d1d9', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13, lineHeight: 1.65 }}>
+          {tokens.map((line, i) => {
+            const lp = getLineProps({ line });
+            return (
+              <div key={i} className={lp.className} style={{ ...lp.style, display: 'flex' }}>
+                <span style={lineNoStyle}>{i + 1}</span>
+                <span style={{ whiteSpace: 'pre', paddingRight: 16 }}>
+                  {line.map((token, key) => {
+                    const tp = getTokenProps({ token });
+                    return <span key={key} className={tp.className} style={tp.style}>{tp.children}</span>;
+                  })}
+                </span>
+              </div>
+            );
+          })}
+        </pre>
+      )}
+    </Highlight>
+  );
+}
+
 export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const codingType: CodingType = courseType === 'SW' ? 'react' : 'blockly';
+  const isReact = codingType === 'react';
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const [code, setCode] = useState<CodeLangs>({});
+  const [code, setCode] = useState<CodeLangs>({});                 // 하드웨어 py/js/c
+  const [webFiles, setWebFiles] = useState<Record<string, string> | null>(null); // 소프트웨어 산출물
   const [mode, setMode] = useState<VibeMode>('quick');
   const [input, setInput] = useState('');
   const [codeTab, setCodeTab] = useState<keyof CodeLangs>('python');
+  const [rightView, setRightView] = useState<'preview' | 'code'>('preview'); // SW 오른쪽 패널
 
   const sessionId = useRef(crypto.randomUUID?.() ?? `demo-${Date.now()}`);
   const resetBuf = useRef(false);
+
+  const previewSrc = useMemo(() => buildPreviewSrcDoc(webFiles), [webFiles]);
+  const reactFile = useMemo(() => primaryFile(webFiles), [webFiles]);
 
   const send = async () => {
     const msg = input.trim();
@@ -79,7 +110,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
       }
       if (ev.type === 'done') {
         if (ev.blockly_code_langs) setCode(ev.blockly_code_langs);
-        onResult?.(ev); // 흐름도·학습노트·준비물·설계문서 탭이 쓰도록 결과를 위로 전달
+        if (ev.generated_code) { setWebFiles(ev.generated_code); setRightView('preview'); }
+        onResult?.(ev);
         setStatus('');
       }
     };
@@ -126,13 +158,9 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
                   boxShadow: isUser ? t.shCoral : 'none',
                 }}
               >
-                {isUser ? (
-                  m.text
-                ) : m.text ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={md}>{m.text}</ReactMarkdown>
-                ) : (
-                  busy && i === messages.length - 1 ? '…' : null
-                )}
+                {isUser ? m.text
+                  : m.text ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={md}>{m.text}</ReactMarkdown>
+                  : (busy && i === messages.length - 1 ? '…' : null)}
               </div>
             );
           })}
@@ -149,9 +177,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <textarea
-              value={input}
-              rows={2}
-              disabled={busy}
+              value={input} rows={2} disabled={busy}
               placeholder="만들고 싶은 동작을 설명해주세요"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
@@ -165,63 +191,62 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
         </div>
       </div>
 
-      {/* 오른쪽: 코드 보기 (에디터 룩 + 하이라이팅 + 라인번호) */}
+      {/* 오른쪽: SW=미리보기/코드, HW=py/js/c */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: t.rMd, overflow: 'hidden', background: '#0d1117', minWidth: 0, border: '1px solid #1f2430' }}>
-        <div style={{ display: 'flex', gap: 2, padding: '8px 8px 0', background: '#161b22' }}>
-          {CODE_TABS.map((x) => (
-            <button
-              key={x.key}
-              type="button"
-              onClick={() => setCodeTab(x.key)}
-              style={{
-                padding: '8px 16px', border: 'none', cursor: 'pointer', borderRadius: '8px 8px 0 0', fontFamily: t.font, fontSize: 13,
-                background: codeTab === x.key ? '#0d1117' : 'transparent',
-                color: codeTab === x.key ? '#fff' : '#8b949e',
-                fontWeight: codeTab === x.key ? 700 : 400,
-              }}
-            >
-              {x.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          {activeCode ? (
-            <Highlight theme={themes.vsDark} code={activeCode} language={activeLang}>
-              {({ tokens, getLineProps, getTokenProps }) => (
-                <pre style={{ margin: 0, padding: '14px 0', textAlign: 'left', background: 'transparent', color: '#c9d1d9', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13, lineHeight: 1.65 }}>
-                  {tokens.map((line, i) => {
-                    const lp = getLineProps({ line });
-                    return (
-                      <div key={i} className={lp.className} style={{ ...lp.style, display: 'flex' }}>
-                        <span style={lineNoStyle}>{i + 1}</span>
-                        <span style={{ whiteSpace: 'pre', paddingRight: 16 }}>
-                          {line.map((token, key) => {
-                            const tp = getTokenProps({ token });
-                            return <span key={key} className={tp.className} style={tp.style}>{tp.children}</span>;
-                          })}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </pre>
-              )}
-            </Highlight>
-          ) : (
-            <div style={{ padding: 16, color: '#6b7280', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13 }}>
-              // 왼쪽에서 코드를 생성하면 여기에 표시됩니다.
+        {isReact ? (
+          <>
+            <div style={{ display: 'flex', gap: 2, padding: '8px 8px 0', background: '#161b22' }}>
+              {(['preview', 'code'] as const).map((v) => (
+                <button key={v} type="button" onClick={() => setRightView(v)} style={rightTab(rightView === v)}>
+                  {v === 'preview' ? '미리보기' : '코드'}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              {rightView === 'preview' ? (
+                previewSrc ? (
+                  <iframe title="미리보기" srcDoc={previewSrc} sandbox="allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
+                ) : <EmptyDark text="오른쪽에서 볼 미리보기를 생성해보세요." />
+              ) : (
+                reactFile ? <Hi code={reactFile.code} lang="tsx" /> : <EmptyDark text="생성하면 코드가 여기 표시됩니다." />
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 2, padding: '8px 8px 0', background: '#161b22' }}>
+              {CODE_TABS.map((x) => (
+                <button key={x.key} type="button" onClick={() => setCodeTab(x.key)} style={rightTab(codeTab === x.key)}>
+                  {x.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              {activeCode ? <Hi code={activeCode} lang={activeLang} /> : <EmptyDark text="// 왼쪽에서 코드를 생성하면 여기에 표시됩니다." />}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+function EmptyDark({ text }: { text: string }) {
+  return <div style={{ padding: 16, color: '#6b7280', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13 }}>{text}</div>;
+}
+
 const lineNoStyle: CSSProperties = {
-  width: 44, flexShrink: 0, textAlign: 'right', paddingRight: 14,
-  color: '#4b5563', userSelect: 'none',
+  width: 44, flexShrink: 0, textAlign: 'right', paddingRight: 14, color: '#4b5563', userSelect: 'none',
 };
+
+function rightTab(active: boolean): CSSProperties {
+  return {
+    padding: '8px 16px', border: 'none', cursor: 'pointer', borderRadius: '8px 8px 0 0', fontFamily: t.font, fontSize: 13,
+    background: active ? '#0d1117' : 'transparent',
+    color: active ? '#fff' : '#8b949e',
+    fontWeight: active ? 700 : 400,
+  };
+}
 
 function modeBtn(active: boolean): CSSProperties {
   return {

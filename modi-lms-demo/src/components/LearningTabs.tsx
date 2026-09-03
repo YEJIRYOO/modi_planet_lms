@@ -8,6 +8,7 @@ import FlowchartTab from './FlowchartTab';
 import LearningNotesTab from './LearningNotesTab';
 import PartsTab from './PartsTab';
 import DesignDocTab from './DesignDocTab';
+import PreviewTab from './PreviewTab';
 import { t } from '../styles/tokens';
 
 type TabKey = 'vibe' | 'preview' | 'code' | 'modi' | 'flow' | 'parts' | 'design' | 'note';
@@ -28,18 +29,6 @@ const TABS_BY_TYPE: Record<CourseType, TabKey[]> = {
   SW: ['vibe', 'preview', 'design', 'note'],
   HW_SW: ['vibe', 'preview', 'code', 'modi', 'flow', 'parts', 'design', 'note'],
 };
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div style={{
-      width: '100%', height: '100%', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      border: `1px dashed ${t.lineStrong}`, borderRadius: t.rMd, color: t.muted, fontFamily: t.font,
-    }}>
-      {label} (자리표시)
-    </div>
-  );
-}
 
 interface LearningTabsProps {
   courseType: CourseType;
@@ -83,12 +72,12 @@ export default function LearningTabs({ courseType, codeEditorMode = '', locale =
         </div>
 
         {active === 'code' && <CodeEditorTab mode={codeEditorMode} locale={locale} />}
-        {active === 'modi' && <ModitorTab locale={locale} />}
+        {active === 'modi' && <ModitorTab locale={locale} blocklyXml={result?.blockly_xml ?? undefined} />}
         {active === 'flow' && <FlowchartTab result={result} />}
         {active === 'parts' && <PartsTab result={result} />}
         {active === 'design' && <DesignDocTab result={result} />}
         {active === 'note' && <LearningNotesTab result={result} />}
-        {active === 'preview' && <Placeholder label={TAB_LABEL.preview} />}
+        {active === 'preview' && <PreviewTab result={result} />}
       </div>
     </div>
   );
