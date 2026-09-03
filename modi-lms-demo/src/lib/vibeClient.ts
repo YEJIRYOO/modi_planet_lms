@@ -1,8 +1,8 @@
-// modi_edu_agent /chat 스트리밍 클라이언트 (라이브 응답으로 검증된 계약)
+===// modi_edu_agent /chat 스트리밍 클라이언트 (라이브 응답으로 검증된 계약)
 // Vite 프록시(/agent → ai.modiplanet)를 거쳐 호출하므로 브라우저 CORS 문제가 없다.
 
 export type VibeMode = 'quick' | 'design';    // 바로 만들기 | 설계부터
-export type CodingType = 'blockly' | 'react'; // 하드웨어(MODI) | 소프트웨어(웹)
+export type CodingType = 'blockly' | 'react' | 'hybrid'; // 하드웨어(MODI) | 소프트웨어(웹)
 
 export interface CodeLangs {
   python?: string;
@@ -19,7 +19,7 @@ export interface FlowNode {
 }
 export interface LearningNote { title: string; what: string; why: string; where: string; }
 export interface ModiModule { key: string; role: string; reason: string; count: number; }
-export interface ModiModules {
+export interface ModiModules {=
   modules: ModiModule[];
   assembly?: string[];
   layout?: unknown[];
@@ -111,3 +111,4 @@ export async function streamChat(
     }
   }
 }
+

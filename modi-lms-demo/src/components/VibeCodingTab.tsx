@@ -1,11 +1,12 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { streamChat, type VibeMode, type CodingType, type CodeLangs, type VibeEvent, type VibeResult } from '../lib/vibeClient';
 import type { CourseType } from '../types';
-import { buildPreviewSrcDoc, primaryFile } from '../lib/preview';
+import SandpackApp from './SandpackApp';
+import HybridPreview from './HybridPreview';
 import { t } from '../styles/tokens';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
@@ -17,7 +18,6 @@ const CODE_TABS: { key: keyof CodeLangs; label: string; lang: string }[] = [
   { key: 'c', label: 'main.c', lang: 'c' },
 ];
 
-// 마크다운 → 실제 요소 (children만 받아 불필요한 prop 유출 방지)
 const hStyle: CSSProperties = { fontWeight: 700, fontSize: 15, margin: '10px 0 6px', color: t.ink };
 const md: Components = {
   p: ({ children }) => <p style={{ margin: '0 0 8px' }}>{children}</p>,
@@ -35,7 +35,6 @@ const md: Components = {
   ),
 };
 
-// 코드 하이라이팅 블록 (라인번호 + 왼쪽정렬)
 function Hi({ code, lang }: { code: string; lang: string }) {
   return (
     <Highlight theme={themes.vsDark} code={code} language={lang}>
@@ -62,24 +61,21 @@ function Hi({ code, lang }: { code: string; lang: string }) {
 }
 
 export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
-  const codingType: CodingType = courseType === 'SW' ? 'react' : 'blockly';
+  const codingType: CodingType = courseType === 'SW' ? 'react' : courseType === 'HW_SW' ? 'hybrid' : 'blockly';
   const isReact = codingType === 'react';
+  const isHybrid = codingType === 'hybrid';
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const [code, setCode] = useState<CodeLangs>({});                 // 하드웨어 py/js/c
-  const [webFiles, setWebFiles] = useState<Record<string, string> | null>(null); // 소프트웨어 산출물
+  const [code, setCode] = useState<CodeLangs>({});
+  const [webFiles, setWebFiles] = useState<Record<string, string> | null>(null);
   const [mode, setMode] = useState<VibeMode>('quick');
   const [input, setInput] = useState('');
   const [codeTab, setCodeTab] = useState<keyof CodeLangs>('python');
-  const [rightView, setRightView] = useState<'preview' | 'code'>('preview'); // SW 오른쪽 패널
 
   const sessionId = useRef(crypto.randomUUID?.() ?? `demo-${Date.now()}`);
   const resetBuf = useRef(false);
-
-  const previewSrc = useMemo(() => buildPreviewSrcDoc(webFiles), [webFiles]);
-  const reactFile = useMemo(() => primaryFile(webFiles), [webFiles]);
 
   const send = async () => {
     const msg = input.trim();
@@ -110,7 +106,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
       }
       if (ev.type === 'done') {
         if (ev.blockly_code_langs) setCode(ev.blockly_code_langs);
-        if (ev.generated_code) { setWebFiles(ev.generated_code); setRightView('preview'); }
+        if (ev.generated_code) setWebFiles(ev.generated_code);
         onResult?.(ev);
         setStatus('');
       }
@@ -132,6 +128,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
 
   const activeLang = CODE_TABS.find((x) => x.key === codeTab)!.lang;
   const activeCode = code[codeTab] ?? '';
+  const hasWeb = !!webFiles && Object.keys(webFiles).length > 0;
 
   return (
     <div style={{ display: 'flex', height: '100%', gap: 12, minHeight: 0, textAlign: 'left', fontFamily: t.font, color: t.ink }}>
@@ -147,17 +144,13 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
           {messages.map((m, i) => {
             const isUser = m.role === 'user';
             return (
-              <div
-                key={i}
-                style={{
-                  alignSelf: isUser ? 'flex-end' : 'flex-start',
-                  maxWidth: '85%', padding: '10px 14px', borderRadius: 14, textAlign: 'left', lineHeight: 1.55,
-                  wordBreak: 'break-word', whiteSpace: isUser ? 'pre-wrap' : 'normal',
-                  background: isUser ? t.coral : t.soft,
-                  color: isUser ? '#fff' : t.ink,
-                  boxShadow: isUser ? t.shCoral : 'none',
-                }}
-              >
+              <div key={i} style={{
+                alignSelf: isUser ? 'flex-end' : 'flex-start',
+                maxWidth: '85%', padding: '10px 14px', borderRadius: 14, textAlign: 'left', lineHeight: 1.55,
+                wordBreak: 'break-word', whiteSpace: isUser ? 'pre-wrap' : 'normal',
+                background: isUser ? t.coral : t.soft, color: isUser ? '#fff' : t.ink,
+                boxShadow: isUser ? t.shCoral : 'none',
+              }}>
                 {isUser ? m.text
                   : m.text ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={md}>{m.text}</ReactMarkdown>
                   : (busy && i === messages.length - 1 ? '…' : null)}
@@ -191,48 +184,40 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
         </div>
       </div>
 
-      {/* 오른쪽: SW=미리보기/코드, HW=py/js/c */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: t.rMd, overflow: 'hidden', background: '#0d1117', minWidth: 0, border: '1px solid #1f2430' }}>
+      {/* 오른쪽: SW=Sandpack 미리보기, HW=py/js/c */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: t.rMd, overflow: 'hidden', minWidth: 0, background: isReact || isHybrid ? t.surface : '#0d1117', border: isReact || isHybrid ? `1px solid ${t.line}` : '1px solid #1f2430' }}>
         {isReact ? (
-          <>
-            <div style={{ display: 'flex', gap: 2, padding: '8px 8px 0', background: '#161b22' }}>
-              {(['preview', 'code'] as const).map((v) => (
-                <button key={v} type="button" onClick={() => setRightView(v)} style={rightTab(rightView === v)}>
-                  {v === 'preview' ? '미리보기' : '코드'}
-                </button>
-              ))}
+          hasWeb ? (
+            <SandpackApp files={webFiles!} mode="preview" />
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.muted }}>
+              오른쪽에서 볼 미리보기를 생성해보세요.
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              {rightView === 'preview' ? (
-                previewSrc ? (
-                  <iframe title="미리보기" srcDoc={previewSrc} sandbox="allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
-                ) : <EmptyDark text="오른쪽에서 볼 미리보기를 생성해보세요." />
-              ) : (
-                reactFile ? <Hi code={reactFile.code} lang="tsx" /> : <EmptyDark text="생성하면 코드가 여기 표시됩니다." />
-              )}
+          )
+        ) : isHybrid ? (
+          hasWeb ? (
+            <HybridPreview files={webFiles} />
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.muted }}>
+              오른쪽에서 볼 미리보기를 생성해보세요.
             </div>
-          </>
+          )
         ) : (
           <>
             <div style={{ display: 'flex', gap: 2, padding: '8px 8px 0', background: '#161b22' }}>
               {CODE_TABS.map((x) => (
-                <button key={x.key} type="button" onClick={() => setCodeTab(x.key)} style={rightTab(codeTab === x.key)}>
-                  {x.label}
-                </button>
+                <button key={x.key} type="button" onClick={() => setCodeTab(x.key)} style={rightTab(codeTab === x.key)}>{x.label}</button>
               ))}
             </div>
             <div style={{ flex: 1, overflow: 'auto' }}>
-              {activeCode ? <Hi code={activeCode} lang={activeLang} /> : <EmptyDark text="// 왼쪽에서 코드를 생성하면 여기에 표시됩니다." />}
+              {activeCode ? <Hi code={activeCode} lang={activeLang} />
+                : <div style={{ padding: 16, color: '#6b7280', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13 }}>// 왼쪽에서 코드를 생성하면 여기에 표시됩니다.</div>}
             </div>
           </>
         )}
       </div>
     </div>
   );
-}
-
-function EmptyDark({ text }: { text: string }) {
-  return <div style={{ padding: 16, color: '#6b7280', fontFamily: 'SFMono-Regular, Menlo, Consolas, monospace', fontSize: 13 }}>{text}</div>;
 }
 
 const lineNoStyle: CSSProperties = {
@@ -242,9 +227,7 @@ const lineNoStyle: CSSProperties = {
 function rightTab(active: boolean): CSSProperties {
   return {
     padding: '8px 16px', border: 'none', cursor: 'pointer', borderRadius: '8px 8px 0 0', fontFamily: t.font, fontSize: 13,
-    background: active ? '#0d1117' : 'transparent',
-    color: active ? '#fff' : '#8b949e',
-    fontWeight: active ? 700 : 400,
+    background: active ? '#0d1117' : 'transparent', color: active ? '#fff' : '#8b949e', fontWeight: active ? 700 : 400,
   };
 }
 
@@ -252,7 +235,6 @@ function modeBtn(active: boolean): CSSProperties {
   return {
     padding: '6px 12px', borderRadius: 10, cursor: 'pointer', background: active ? t.coralPale : t.surface,
     border: active ? `1px solid ${t.coral}` : `1px solid ${t.line}`,
-    color: active ? t.coralStrong : t.muted,
-    fontWeight: active ? 700 : 400, fontFamily: t.font,
+    color: active ? t.coralStrong : t.muted, fontWeight: active ? 700 : 400, fontFamily: t.font,
   };
 }

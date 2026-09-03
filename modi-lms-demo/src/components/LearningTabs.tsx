@@ -67,7 +67,7 @@ export default function LearningTabs({ courseType, locale = 'ko' }: LearningTabs
         {active === 'modi' && <ModitorTab locale={locale} blocklyXml={result?.blockly_xml ?? undefined} />}
         {active === 'parts' && <PartsTab result={result} />}
         {active === 'note' && <LearningNotesTab result={result} />}
-        {active === 'preview' && <PreviewTab result={result} />}
+        {active === 'preview' && <PreviewTab result={result} courseType={courseType} />}
       </div>
     </div>
   );
