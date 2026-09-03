@@ -1,4 +1,4 @@
-===// modi_edu_agent /chat 스트리밍 클라이언트 (라이브 응답으로 검증된 계약)
+// modi_edu_agent /chat 스트리밍 클라이언트 (라이브 응답으로 검증된 계약)
 // Vite 프록시(/agent → ai.modiplanet)를 거쳐 호출하므로 브라우저 CORS 문제가 없다.
 
 export type VibeMode = 'quick' | 'design';    // 바로 만들기 | 설계부터
