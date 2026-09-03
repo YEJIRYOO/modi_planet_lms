@@ -1,66 +1,94 @@
 import { useNavigate } from 'react-router-dom';
-import { COURSES } from '../data/courses';
+import { COURSES, type Course } from '../data/courses';
 import { getAllProgress, resetProgress } from '../lib/progressStore';
-
-const TYPE_BADGE: Record<string, string> = { HW: 'HW', SW: 'SW', HW_SW: 'HW+SW' };
+import { TYPE_META } from '../data/designDoc';
+import { t } from '../styles/tokens';
+import { Kicker, Page, TypeBadge } from '../components/ui';
 
 export default function MyPage() {
   const nav = useNavigate();
   const progress = getAllProgress();
-  const role = localStorage.getItem('demo_role') || 'student';
-
-  const inProgress = COURSES.filter((c) => progress[c.id] === 'in_progress');
-  const done = COURSES.filter((c) => progress[c.id] === 'done');
+  const teacher = localStorage.getItem('demo_role') === 'teacher';
+  const inProgress = COURSES.filter((course) => progress[course.id] === 'in_progress');
+  const done = COURSES.filter((course) => progress[course.id] === 'done');
 
   return (
-    <div style={{ padding: 40, fontFamily: 'system-ui' }}>
-      <button onClick={() => nav('/courses')} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', marginBottom: 16 }}>← 강좌 목록</button>
-      <h2>마이페이지</h2>
+    <Page>
+      <header style={{ padding: '36px 0 24px', textAlign: 'left' }}>
+        <Kicker>마이페이지</Kicker>
+        <h1 style={{ margin: 0, fontSize: 'clamp(30px,4vw,44px)', fontWeight: 800, letterSpacing: '-.04em', color: t.ink }}>
+          {teacher ? '우리 학급의 수업 공간' : '나의 학습 공간'}
+        </h1>
+        <p style={{ marginTop: 10, color: t.muted, fontSize: 15 }}>
+          {teacher ? '시작한 수업과 완료한 수업을 한곳에서 확인하세요.' : '진행 중인 프로젝트를 이어서 만들고, 완료한 작품을 다시 살펴보세요.'}
+        </p>
+      </header>
 
-      {/* 프로필 요약 */}
-      <div style={{ display: 'flex', gap: 24, padding: 20, background: '#f8fafc', borderRadius: 12, marginBottom: 24 }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#cbd5e1' }} />
-        <div>
-          <div style={{ fontWeight: 600 }}>{role === 'teacher' ? '선생님' : '학생'} (데모)</div>
-          <div style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>
-            완료 강좌 {done.length}개 · 수강 중 {inProgress.length}개
+      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) repeat(2, minmax(120px, 180px))', gap: 12, marginBottom: 38 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, padding: '20px 22px', border: `1px solid ${t.coralSoft}`, borderRadius: t.rMd, background: `linear-gradient(135deg, ${t.coralPale}, ${t.surface})`, boxShadow: t.shSm, textAlign: 'left' }}>
+          <div style={{ width: 54, height: 54, flex: '0 0 54px', display: 'grid', placeItems: 'center', borderRadius: 17, background: t.coral, color: '#fff', fontSize: 22, fontWeight: 800, boxShadow: t.shCoral }}>
+            {teacher ? 'T' : 'S'}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: t.ink, fontSize: 18, fontWeight: 780 }}>{teacher ? '학급 계정' : '학생 계정'} <span style={{ color: t.muted, fontSize: 13, fontWeight: 600 }}>(데모)</span></div>
+            <div style={{ marginTop: 5, color: t.muted, fontSize: 13 }}>{teacher ? '수업 운영 프로필' : '개인 학습 프로필'}</div>
           </div>
         </div>
+        <StatCard label="수강 중" value={inProgress.length} color={t.coralStrong} background={t.coralPale} />
+        <StatCard label="수강 완료" value={done.length} color={t.green} background={t.greenSoft} />
+      </section>
+
+      <CourseSection eyebrow="IN PROGRESS" title={`수강 중 (${inProgress.length})`} description="진행 중인 프로젝트를 마지막 단계부터 이어서 시작하세요."
+        courses={inProgress} emptyText="아직 수강 중인 강좌가 없어요. 교육과정에서 새로운 프로젝트를 시작해 보세요."
+        onCourse={(id) => nav(`/learning/${id}`)} cta={teacher ? '수업 이어가기' : '이어서 학습'} />
+      <CourseSection eyebrow="COMPLETED" title={`수강 완료 (${done.length})`} description="완료한 프로젝트와 학습 내용을 언제든 다시 확인할 수 있어요."
+        courses={done} emptyText="완료한 강좌가 아직 없어요. 진행 중인 프로젝트를 마무리해 보세요."
+        onCourse={(id) => nav(`/courses/${id}`)} cta="다시 보기" />
+
+      <div style={{ paddingTop: 4, borderTop: `1px solid ${t.line}`, textAlign: 'right' }}>
+        <button onClick={() => { resetProgress(); window.location.reload(); }}
+          style={{ marginTop: 18, padding: '8px 12px', border: `1px solid ${t.line}`, borderRadius: 9, background: t.surface, color: t.muted, cursor: 'pointer', fontFamily: t.font, fontSize: 12, fontWeight: 650 }}>
+          데모 학습 기록 초기화
+        </button>
       </div>
-
-      <Section title={`수강 중 (${inProgress.length})`} courses={inProgress} onClick={(id) => nav(`/learning/${id}`)} cta="이어서 학습" />
-      <Section title={`수강 완료 (${done.length})`} courses={done} onClick={(id) => nav(`/courses/${id}`)} cta="다시 보기" />
-
-      <button onClick={() => { resetProgress(); window.location.reload(); }}
-        style={{ marginTop: 32, padding: '6px 12px', fontSize: 13, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 6, cursor: 'pointer', color: '#64748b' }}>
-        데모 초기화 (다음 체험자용)
-      </button>
-    </div>
+    </Page>
   );
 }
 
-function Section({ title, courses, onClick, cta }: {
-  title: string;
-  courses: typeof COURSES;
-  onClick: (id: string) => void;
-  cta: string;
+function StatCard({ label, value, color, background }: { label: string; value: number; color: string; background: string }) {
+  return <div style={{ padding: '18px 20px', border: `1px solid ${t.line}`, borderRadius: t.rMd, background, boxShadow: t.shSm, textAlign: 'left' }}>
+    <div style={{ color: t.muted, fontSize: 12, fontWeight: 700 }}>{label}</div>
+    <div style={{ marginTop: 7, color, fontSize: 28, lineHeight: 1, fontWeight: 820 }}>{value}<span style={{ marginLeft: 3, fontSize: 13, fontWeight: 650 }}>개</span></div>
+  </div>;
+}
+
+function CourseSection({ eyebrow, title, description, courses, emptyText, onCourse, cta }: {
+  eyebrow: string; title: string; description: string; courses: Course[]; emptyText: string; onCourse: (id: string) => void; cta: string;
 }) {
-  return (
-    <div style={{ marginBottom: 28 }}>
-      <h3 style={{ marginBottom: 12 }}>{title}</h3>
-      {courses.length === 0 ? (
-        <p style={{ color: '#94a3b8', fontSize: 14 }}>아직 없습니다.</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-          {courses.map((c) => (
-            <div key={c.id} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-              <span style={{ fontSize: 12, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 999 }}>{TYPE_BADGE[c.type]}</span>
-              <h4 style={{ margin: '10px 0 4px' }}>{c.title}</h4>
-              <button onClick={() => onClick(c.id)} style={{ marginTop: 8, padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>{cta}</button>
-            </div>
-          ))}
-        </div>
-      )}
+  return <section style={{ marginBottom: 38, textAlign: 'left' }}>
+    <div style={{ marginBottom: 15 }}>
+      <div style={{ marginBottom: 5, color: t.coralStrong, fontSize: 11, fontWeight: 800, letterSpacing: '.08em' }}>{eyebrow}</div>
+      <h2 style={{ margin: 0, color: t.ink, fontSize: 22, fontWeight: 780, letterSpacing: '-.025em' }}>{title}</h2>
+      <p style={{ marginTop: 6, color: t.muted, fontSize: 13 }}>{description}</p>
     </div>
-  );
+    {courses.length === 0 ? <div style={{ padding: '28px 22px', border: `1px dashed ${t.lineStrong}`, borderRadius: t.rMd, background: t.soft, color: t.muted, fontSize: 13.5, lineHeight: 1.6 }}>{emptyText}</div> :
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        {courses.map((course) => <ProgressCard key={course.id} course={course} cta={cta} onClick={() => onCourse(course.id)} />)}
+      </div>}
+  </section>;
+}
+
+function ProgressCard({ course, cta, onClick }: { course: Course; cta: string; onClick: () => void }) {
+  const meta = TYPE_META[course.type];
+  return <article style={{ overflow: 'hidden', border: `1px solid ${t.line}`, borderRadius: t.rMd, background: t.surface, boxShadow: t.shSm, textAlign: 'left' }}>
+    <div style={{ height: 86, padding: 14, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', background: `linear-gradient(135deg, ${meta.bg}, ${t.coralPale})` }}>
+      <TypeBadge type={course.type} /><span aria-hidden="true" style={{ fontSize: 31 }}>{meta.icon}</span>
+    </div>
+    <div style={{ padding: '16px 17px 17px' }}>
+      <div style={{ color: t.muted, fontSize: 11.5, fontWeight: 650 }}>{meta.full} · {course.goal}</div>
+      <h3 style={{ margin: '7px 0 5px', color: t.ink, fontSize: 17, lineHeight: 1.35, fontWeight: 760 }}>{course.title}</h3>
+      <p style={{ minHeight: 41, color: t.muted, fontSize: 12.5, lineHeight: 1.6 }}>{course.description}</p>
+      <button onClick={onClick} style={{ width: '100%', marginTop: 14, padding: '9px 13px', border: 0, borderRadius: 10, background: t.coralSoft, color: t.coralStrong, cursor: 'pointer', fontFamily: t.font, fontSize: 13, fontWeight: 750 }}>{cta} →</button>
+    </div>
+  </article>;
 }

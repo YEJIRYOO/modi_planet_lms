@@ -6,6 +6,8 @@ import CourseListPage from './pages/CourseListPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import LearningPage from './pages/LearningPage';
 import MyPage from './pages/MyPage';
+import CodeEditorPage from './pages/CodeEditorPage';
+import AiLabPage from './pages/AiLabPage';
 
 export default function App() {
   return (
@@ -20,6 +22,8 @@ export default function App() {
           <Route path="/courses" element={<CourseListPage />} />
           <Route path="/courses/:id" element={<CourseDetailPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/code-editor" element={<CodeEditorPage />} />
+          <Route path="/ai-lab" element={<AiLabPage />} />
         </Route>
 
         {/* 학습화면: 로그인 가드만(풀스크린, 레일 없음) */}

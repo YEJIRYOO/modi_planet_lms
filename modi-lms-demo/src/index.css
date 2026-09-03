@@ -51,19 +51,67 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
   text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.app-shell__sidebar {
+  box-sizing: border-box;
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app-shell__main {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .app-shell__sidebar {
+    width: 76px !important;
+    padding: 18px 10px 14px !important;
+    align-items: stretch;
+  }
+
+  .app-shell__brand,
+  .app-shell__version,
+  .app-shell__nav-label,
+  .app-shell__levels-heading,
+  .app-shell__levels,
+  .app-shell__account {
+    display: none !important;
+  }
+
+  .app-shell__nav-item {
+    justify-content: center;
+    padding-inline: 8px !important;
+  }
+
+  .app-shell__main {
+    margin-left: 76px !important;
+  }
 }
 
 h1,

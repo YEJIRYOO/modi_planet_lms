@@ -1,6 +1,16 @@
 import type { Course } from '../data/courses';
 import { t } from '../styles/tokens';
 import { TypeBadge, Btn } from './ui';
+import { TeacherGuideViewer } from './TeacherGuideViewer';
+
+function Section({ title, full, children }: { title: string; full?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{ gridColumn: full ? '1 / -1' : 'auto', padding: 20, background: t.soft, border: `1px solid ${t.line}`, borderRadius: 17 }}>
+      <h3 style={{ margin: '0 0 13px', fontSize: 15, color: t.ink, fontWeight: 750 }}>{title}</h3>
+      {children}
+    </div>
+  );
+}
 
 // 설계문서 뷰어 — 스키마 기반 읽기 전용. CourseDetail 교안/설계문서 + (추후) 학습탭 공용.
 export function DesignDocViewer({ course, mode = 'doc', onClose, onStart }: {
@@ -9,12 +19,7 @@ export function DesignDocViewer({ course, mode = 'doc', onClose, onStart }: {
   const p = course.plan;
   const teacher = mode === 'plan';
 
-  const Section = ({ title, full, children }: { title: string; full?: boolean; children: React.ReactNode }) => (
-    <div style={{ gridColumn: full ? '1 / -1' : 'auto', padding: 20, background: t.soft, border: `1px solid ${t.line}`, borderRadius: 17 }}>
-      <h3 style={{ margin: '0 0 13px', fontSize: 15, color: t.ink, fontWeight: 750 }}>{title}</h3>
-      {children}
-    </div>
-  );
+  if (teacher) return <TeacherGuideViewer course={course} onClose={onClose} onStart={onStart} />;
 
   return (
     <div onClick={onClose} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(31,29,29,.54)', backdropFilter: 'blur(5px)', display: 'grid', placeItems: 'center', padding: 15 }}>
