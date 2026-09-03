@@ -1,4 +1,4 @@
-// modi_edu_agent /chat 스트리밍 클라이언트
+// modi_edu_agent /chat 스트리밍 클라이언트 (라이브 응답으로 검증된 계약)
 // Vite 프록시(/agent → ai.modiplanet)를 거쳐 호출하므로 브라우저 CORS 문제가 없다.
 
 export type VibeMode = 'quick' | 'design';    // 바로 만들기 | 설계부터
@@ -10,14 +10,51 @@ export interface CodeLangs {
   c?: string;
 }
 
-// 스트림으로 내려오는 이벤트(다루는 것만 정의)
+// ── done 이벤트가 실어오는 산출물들 (탭들이 읽는다) ──
+export interface FlowNode {
+  type: string;   // start | loop | condition | action | end ...
+  label: string;
+  children?: FlowNode[];
+  branches?: { label: string; children?: FlowNode[] }[];
+}
+export interface LearningNote { title: string; what: string; why: string; where: string; }
+export interface ModiModule { key: string; role: string; reason: string; count: number; }
+export interface ModiModules {
+  modules: ModiModule[];
+  assembly?: string[];
+  layout?: unknown[];
+  title?: string;
+  description?: string;
+}
+export interface DesignFeature { name: string; description?: string; priority?: string; }
+export interface DesignDoc {
+  project_name?: string;
+  description?: string;
+  users?: string[];
+  features?: DesignFeature[];
+  user_flows?: string[];
+}
+
+/** done 이벤트에서 뽑아 탭들에 공유하는 결과 묶음 */
+export interface VibeResult {
+  blockly_code_langs?: CodeLangs | null;
+  blockly_xml?: string | null;
+  blockly_flowchart?: FlowNode[] | null;
+  blockly_detail?: string | null;
+  learning_notes?: LearningNote[] | null;
+  modi_modules?: ModiModules | null;
+  design_doc?: DesignDoc | null;
+  generated_code?: Record<string, string> | null;
+}
+
+// 스트림 이벤트 (다루는 것만)
 export type VibeEvent =
   | { type: 'status'; message: string }
   | { type: 'token'; text: string }
   | { type: 'agent_step' }
   | { type: 'agent_step_update' }
   | { type: 'blockly_ready' }
-  | { type: 'done'; blockly_code_langs?: CodeLangs | null; generated_code?: Record<string, string> | null };
+  | ({ type: 'done' } & VibeResult);
 
 export interface SendParams {
   sessionId: string;
@@ -50,7 +87,6 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = '';
 
-  // SSE 이벤트는 빈 줄(\n\n)로 구분된다. 청크가 중간에서 끊길 수 있어 버퍼링한다.
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
@@ -68,7 +104,7 @@ export async function streamChat(
         try {
           onEvent(JSON.parse(json) as VibeEvent);
         } catch {
-          // 파싱 실패 라인은 무시
+          // 파싱 실패 라인 무시
         }
       }
       sep = buffer.indexOf('\n\n');
