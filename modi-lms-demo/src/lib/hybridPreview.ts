@@ -1,8 +1,21 @@
 // 하이브리드(HW+SW) App.tsx 미리보기 harness.
-// 하이브리드 앱은 전역 MODI SDK(useButton, MODI.led() 등)를 쓰는 단일 파일이라,
-// 실제 modi-sdk.js 를 넣고 mock 으로 강제하면 하드웨어 없이도 렌더된다.
-//
-// 사전 준비: modi_edu_agent/hybrid/modi-sdk.js 를 modi-lms-demo/public/hybrid/modi-sdk.js 로 복사.
+// srcdoc iframe 은 origin 이 null 이라 외부 script(module/src)를 못 불러온다.
+// → modi-sdk.js 를 fetch 해서 export 를 떼고 harness 안에 인라인으로 심는다.
+
+let _sdkCache: string | null = null;
+
+// public/hybrid/modi-sdk.js 를 한 번 받아서 캐시 (export 구문 제거 → 일반 script 로 실행 가능)
+export async function loadSdkSource(): Promise<string> {
+  if (_sdkCache != null) return _sdkCache;
+  const res = await fetch('/hybrid/modi-sdk.js');
+  let src = await res.text();
+  // ESM export 제거 (일반 script 로 돌리기 위함). window.MODI 등은 파일 내부에서 이미 할당함.
+  src = src
+    .replace(/^\s*export\s+default\s+[^;]+;?\s*$/gm, '')
+    .replace(/^\s*export\s*\{[\s\S]*?\}\s*;?\s*$/gm, '');
+  _sdkCache = src;
+  return src;
+}
 
 function toRenderable(code: string): string {
   return code
@@ -13,7 +26,11 @@ function toRenderable(code: string): string {
     .replace(/<\/script>/gi, '<\\/script>');
 }
 
-export function buildHybridSrcDoc(files: Record<string, string> | null | undefined): string | null {
+// sdkSource: loadSdkSource() 로 받은 문자열. files: generated_code.
+export function buildHybridSrcDoc(
+  files: Record<string, string> | null | undefined,
+  sdkSource: string,
+): string | null {
   if (!files) return null;
   const names = Object.keys(files);
   const entry = names.find((n) => /app\.(t|j)sx?$/i.test(n)) ?? names.find((n) => /\.(t|j)sx?$/i.test(n));
@@ -31,34 +48,23 @@ export function buildHybridSrcDoc(files: Record<string, string> | null | undefin
 </head><body>
 <div id="root"></div><div id="err"></div>
 
-<!-- 실제 SDK 로드 후 mock 강제 (하드웨어 없이 동작) -->
-<script type="module">
-  try {
-    const m = await import('/hybrid/modi-sdk.js');
-    const MODI = m.default || window.MODI;
-    if (MODI && MODI._bridge && MODI._bridge.useMock) MODI._bridge.useMock();
-    window.__MODI_READY = true;
-  } catch (e) {
-    window.__MODI_ERR = String(e);
-  }
+<!-- modi-sdk.js 를 인라인으로 실행 (window.React 가 이미 있으므로 훅 자동 부착) -->
+<script>
+try {
+${sdkSource}
+  if (window.MODI && window.MODI._bridge && window.MODI._bridge.useMock) window.MODI._bridge.useMock();
+} catch (e) { window.__MODI_ERR = String(e); }
 </script>
 
 <script type="text/babel" data-presets="typescript,react">
 const { useState, useEffect, useRef, useMemo, useCallback, useReducer } = React;
-let __tries = 0;
 function __mount() {
   if (window.__MODI_ERR) {
-    document.getElementById('err').innerText =
-      'modi-sdk.js 로드 실패: ' + window.__MODI_ERR + '\\npublic/hybrid/modi-sdk.js 가 있는지 확인하세요.';
+    document.getElementById('err').innerText = 'MODI SDK 오류: ' + window.__MODI_ERR;
     return;
   }
-  if (!window.__MODI_READY || !window.MODI || typeof window.useButton !== 'function') {
-    if (__tries++ > 200) {
-      document.getElementById('err').innerText =
-        'MODI SDK 준비 실패 — public/hybrid/modi-sdk.js 를 확인하세요.';
-      return;
-    }
-    setTimeout(__mount, 25);
+  if (!window.MODI || typeof window.useButton !== 'function') {
+    document.getElementById('err').innerText = 'MODI SDK 준비 실패 (전역 훅 없음)';
     return;
   }
   try {
