@@ -6,12 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/agent": {
-        target: "https://ai.modiplanet.com",
+      // 바이브 코딩 백엔드(ai.modiplanet)로 프록시.
+      // 브라우저는 localhost 로만 말하고 Vite 가 서버사이드로 넘겨줘서 CORS 문제가 없다.
+      '/agent': {
+        target: 'https://ai.modiplanet.com',
         changeOrigin: true,
         secure: true,
-        // 경로는 유지 → /agent/chat 그대로 전달 (ai.modiplanet 이 /agent 프리픽스를 떼고 앱에 넘김)
       },
     },
   },
-});
+})
