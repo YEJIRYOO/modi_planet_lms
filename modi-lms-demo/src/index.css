@@ -73,8 +73,15 @@ body {
 }
 
 .app-shell {
+  --app-sidebar-width: 244px;
   width: 100%;
   min-width: 0;
+}
+
+.home-hero__gradient {
+  left: calc((100vw - var(--app-sidebar-width) - 100%) / -2);
+  right: calc((100vw - var(--app-sidebar-width) - 100%) / -2);
+  pointer-events: none;
 }
 
 .app-shell__sidebar {
@@ -89,6 +96,10 @@ body {
 }
 
 @media (max-width: 760px) {
+  .app-shell {
+    --app-sidebar-width: 76px;
+  }
+
   .app-shell__sidebar {
     width: 76px !important;
     padding: 18px 10px 14px !important;

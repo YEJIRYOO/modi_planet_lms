@@ -14,8 +14,8 @@ export default function HomePage() {
   ];
   return (
     <Page>
-      <section style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(300px,.9fr)', gap: 48, alignItems: 'center', padding: '56px 0 40px', borderRadius: t.rLg, overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(700px 340px at 12% 0%, ${t.coralPale}, transparent 70%)`, zIndex: 0 }} />
+      <section style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(300px,.9fr)', gap: 48, alignItems: 'center', padding: '56px 0 40px' }}>
+        <div className="home-hero__gradient" style={{ position: 'absolute', top: 0, bottom: 0, background: `radial-gradient(700px 340px at 12% 0%, ${t.coralPale}, transparent 70%)`, zIndex: 0 }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: t.surface, border: `1px solid ${t.coralSoft}`, borderRadius: 999, fontSize: 13, fontWeight: 700, color: t.coralStrong, marginBottom: 18 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.coral }} /> 2022 개정 교육과정 연계
