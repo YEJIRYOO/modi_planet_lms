@@ -19,7 +19,7 @@ export interface FlowNode {
 }
 export interface LearningNote { title: string; what: string; why: string; where: string; }
 export interface ModiModule { key: string; role: string; reason: string; count: number; }
-export interface ModiModules {=
+export interface ModiModules {
   modules: ModiModule[];
   assembly?: string[];
   layout?: unknown[];
