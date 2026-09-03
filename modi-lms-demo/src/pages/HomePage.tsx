@@ -24,7 +24,7 @@ export default function HomePage() {
             말로 시작해<br /><span style={{ color: t.coral }}>작품으로 끝나는</span> 수업
           </h1>
           <p style={{ maxWidth: 440, marginTop: 18, fontSize: 16, lineHeight: 1.7, color: t.inkSoft }}>
-            바이브 코딩으로 AI에게 요청하고, 미리보기로 결과를 확인하고, MODI 하드웨어로 손끝까지 연결합니다.
+            바이브 코딩으로 AI에게 요청하고, 미리보기로 결과를 확인하고, MODI 하드웨어로 연결합니다.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
             <Btn onClick={() => nav('/courses')}>교육과정 둘러보기</Btn>
