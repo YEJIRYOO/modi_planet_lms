@@ -4,30 +4,26 @@ import type { VibeResult } from '../lib/vibeClient';
 import ModitorTab from './ModitorTab';
 import CodeEditorTab from './CodeEditorTab';
 import VibeCodingTab from './VibeCodingTab';
-import FlowchartTab from './FlowchartTab';
 import LearningNotesTab from './LearningNotesTab';
 import PartsTab from './PartsTab';
-import DesignDocTab from './DesignDocTab';
 import PreviewTab from './PreviewTab';
 import { t } from '../styles/tokens';
 
-type TabKey = 'vibe' | 'preview' | 'code' | 'modi' | 'flow' | 'parts' | 'design' | 'note';
+type TabKey = 'vibe' | 'preview' | 'code' | 'modi' | 'parts' | 'note';
 
 const TAB_LABEL: Record<TabKey, string> = {
   vibe: '바이브 코딩',
   preview: '미리보기',
   code: '코드 에디터',
   modi: '모디',
-  flow: '흐름도',
   parts: '준비물',
-  design: '설계 문서',
   note: '학습 노트',
 };
 
 const TABS_BY_TYPE: Record<CourseType, TabKey[]> = {
-  HW: ['vibe', 'code', 'modi', 'flow', 'parts', 'design', 'note'],
-  SW: ['vibe', 'preview', 'design', 'note'],
-  HW_SW: ['vibe', 'preview', 'code', 'modi', 'flow', 'parts', 'design', 'note'],
+  HW: ['vibe', 'code', 'modi', 'parts', 'note'],
+  SW: ['vibe', 'preview', 'note'],
+  HW_SW: ['vibe', 'preview', 'code', 'modi', 'parts', 'note'],
 };
 
 interface LearningTabsProps {
@@ -39,7 +35,7 @@ interface LearningTabsProps {
 export default function LearningTabs({ courseType, codeEditorMode = '', locale = 'ko' }: LearningTabsProps) {
   const tabs = useMemo(() => TABS_BY_TYPE[courseType], [courseType]);
   const [active, setActive] = useState<TabKey>(tabs[0]);
-  // 바이브 코딩 생성 결과 — 흐름도/학습노트/준비물/설계문서 탭이 공유해서 읽는다.
+  // 바이브 코딩 생성 결과 — 학습 노트/준비물/미리보기 탭이 공유해서 읽는다.
   const [result, setResult] = useState<VibeResult | null>(null);
 
   return (
@@ -73,9 +69,7 @@ export default function LearningTabs({ courseType, codeEditorMode = '', locale =
 
         {active === 'code' && <CodeEditorTab mode={codeEditorMode} locale={locale} />}
         {active === 'modi' && <ModitorTab locale={locale} blocklyXml={result?.blockly_xml ?? undefined} />}
-        {active === 'flow' && <FlowchartTab result={result} />}
         {active === 'parts' && <PartsTab result={result} />}
-        {active === 'design' && <DesignDocTab result={result} />}
         {active === 'note' && <LearningNotesTab result={result} />}
         {active === 'preview' && <PreviewTab result={result} />}
       </div>
