@@ -10,7 +10,7 @@ export type IconName =
   | 'home' | 'course' | 'user' | 'terminal' | 'sparkle'
   | 'chip' | 'monitor' | 'layers'
   | 'backpack' | 'board'
-  | 'chevronRight' | 'check' | 'close' | 'send' | 'download'
+  | 'chevronRight' | 'check' | 'close' | 'send'
   | 'note' | 'parts' | 'preview' | 'blocks' | 'doc' | 'flow';
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & { name: IconName; size?: number };
@@ -84,7 +84,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
   check: <path d="m5.2 12.6 4.5 4.4 9.1-9.6" />,
   close: <path d="m6.2 6.2 11.6 11.6M17.8 6.2 6.2 17.8" />,
   send: <path d="M12 19.6V5M5.7 11.3 12 5l6.3 6.3" />,
-  download: <path d="M12 3.5v11M7.8 10.7 12 15l4.2-4.3M4.2 20h15.6" />,
   note: (
     <>
       <path d="M5.4 4.6a1.7 1.7 0 0 1 1.7-1.7h6.4l4.9 4.9v11.6a1.7 1.7 0 0 1-1.7 1.7H7.1a1.7 1.7 0 0 1-1.7-1.7z" />

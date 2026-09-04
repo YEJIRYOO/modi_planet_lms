@@ -3,10 +3,9 @@ import { modiWebSerial } from '../lib/modiWebSerial';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
 
-export default function StaticProjectPreview({ title, previewUrl, downloadUrl, note, modiBridge = false }: {
+export default function StaticProjectPreview({ title, previewUrl, note, modiBridge = false }: {
   title: string;
   previewUrl: string;
-  downloadUrl?: string;
   note?: string;
   modiBridge?: boolean;
 }) {
@@ -45,7 +44,6 @@ export default function StaticProjectPreview({ title, previewUrl, downloadUrl, n
         </span>
         {note && <span style={{ color: t.muted, fontSize: 12 }}>{note}</span>}
         <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
-          {downloadUrl && <a href={downloadUrl} download style={buttonStyle}>프로젝트 ZIP</a>}
           <a href={previewUrl} target="_blank" rel="noreferrer" style={buttonStyle}>새 창</a>
         </span>
       </div>

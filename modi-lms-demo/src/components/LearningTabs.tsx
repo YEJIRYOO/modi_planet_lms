@@ -118,13 +118,13 @@ export default function LearningTabs({ courseType, courseId, courseTitle, locale
               ? (courseId === '6'
                   ? <BrowserHardwarePreview />
                   : project?.previewUrl
-                    ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
+                    ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} note={project.previewNote} modiBridge={project.modiBridge} />
                     : <GamePreviewTab cur={cur} />)
               : locked('preview', '아직 미리볼 결과가 없어요'))
           : softwareLocked
             ? locked('preview', '아직 미리보기가 열리지 않았어요', '바이브 코딩에서 현재 강좌와 관련된 요청을 완료하면 열립니다.')
             : project?.previewUrl
-              ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
+              ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} note={project.previewNote} modiBridge={project.modiBridge} />
               : <PreviewTab result={result} courseType={courseType} />)}
 
         {active === 'note' && (cur

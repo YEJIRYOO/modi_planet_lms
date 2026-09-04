@@ -32,7 +32,6 @@ export interface HybridCurriculum {
   runCommand: string;
   /** 게임 폴더 이름(실행 안내용) */
   folder: string;
-  archiveUrl?: string;
   modules: HybridModule[];
   /** 실기기 없이 볼 때의 제약 안내 */
   mockNote: string;
@@ -53,7 +52,6 @@ const F1942: HybridCurriculum = {
   courseId: '3',
   port: 8101,
   folder: '1942-standalone',
-  archiveUrl: '/projects/1942-standalone.zip',
   runCommand: 'python app.py --mode real --port 8101',
   modules: [
     { key: 'imu', role: '필수', reason: '기체를 기울여 비행기를 좌우로 움직인다', count: 1 },
@@ -291,7 +289,6 @@ const TILT_MATCH: HybridCurriculum = {
   courseId: '4',
   port: 8102,
   folder: 'tilt-match-standalone',
-  archiveUrl: '/projects/tilt-match-standalone.zip',
   runCommand: 'python app.py --mode real --port 8102',
   modules: [
     { key: 'imu', role: '필수', reason: '좌우로 기울여 방향을 고른다', count: 1 },
@@ -427,7 +424,6 @@ const LOOP_STUDIO: HybridCurriculum = {
   courseId: '5',
   port: 8103,
   folder: 'music-studio-standalone',
-  archiveUrl: '/projects/music-studio-standalone.zip',
   runCommand: 'python app.py --mode real --port 8103',
   modules: [
     { key: 'dial', role: '택1', reason: '연결하면 돌린 각도 0~100이 그대로 볼륨이 된다', count: 1, choiceGroup: 'volume-control' },
@@ -555,7 +551,6 @@ const FUNCTION_SHAPE: HybridCurriculum = {
   courseId: '7',
   port: 8501,
   folder: 'function-shape-standalone',
-  archiveUrl: '/projects/function-shape-standalone.zip',
   runCommand: 'python app.py --mode real --port 8501',
   modules: [
     { key: 'dial', role: '필수', reason: '선택한 함수 계수를 허용 범위 안에서 연속적으로 조절한다', count: 1 },
@@ -587,7 +582,7 @@ const FUNCTION_SHAPE: HybridCurriculum = {
       hint: '완성한 그래프를 어떻게 제출하고 어떤 기준으로 성공시킬지 말해 보세요.',
     },
   ],
-  unlockReply: '**함수 계수 · 모듈 조작 · 정확도 판정**이 모두 정해졌습니다.\n\n코드 보기에서 계수와 그래프의 관계를 확인하고, 프로젝트 ZIP을 실행해 목표 개형을 90% 이상으로 맞춰 보세요.',
+  unlockReply: '**함수 계수 · 모듈 조작 · 정확도 판정**이 모두 정해졌습니다.\n\n코드 보기에서 계수와 그래프의 관계를 확인하고, 미리보기에서 목표 개형을 90% 이상으로 맞춰 보세요.',
   codeFiles: {
     'app.py — 함수와 정확도': `def value(family, params, x):
     if family == 'linear':
@@ -644,7 +639,6 @@ const TIMES_TABLE_QUEST: HybridCurriculum = {
   courseId: '8',
   port: 8502,
   folder: 'times-table-quest-standalone',
-  archiveUrl: '/projects/times-table-quest-standalone.zip',
   runCommand: 'python app.py --mode real --port 8502',
   modules: [
     { key: 'joystick', role: '필수', reason: '좌우로 답을 1씩, 위아래로 답을 10씩 조절한다', count: 1 },
@@ -735,7 +729,6 @@ const CLASSROOM_GARDEN: HybridCurriculum = {
   courseId: '13',
   port: 8701,
   folder: 'classroom-garden-standalone',
-  archiveUrl: '/projects/classroom-garden-standalone.zip',
   runCommand: 'python app.py --mode real --port 8701',
   modules: [
     { key: 'network', role: '필수', reason: 'USB로 컴퓨터와 교실의 MODI PLUS 모듈을 연결한다', count: 1 },
@@ -834,7 +827,6 @@ const EMBER_AND_TIDE: HybridCurriculum = {
   courseId: '12',
   port: 5174,
   folder: 'EMBER_AND_TIDE',
-  archiveUrl: '/projects/ember-and-tide-standalone.zip',
   runCommand: './game_run main.py',
   modules: [
     { key: 'network', role: '필수', reason: 'USB로 컴퓨터와 MODI PLUS 모듈의 통신을 연결한다', count: 1 },

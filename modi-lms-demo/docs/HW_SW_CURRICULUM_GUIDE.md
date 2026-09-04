@@ -60,7 +60,6 @@ const NEW_HYBRID_COURSE: HybridCurriculum = {
   port: 0,
   folder: '',
   runCommand: '',
-  archiveUrl: '/projects/new-course-standalone.zip',
   modules: [
     {
       key: 'imu',
@@ -133,7 +132,6 @@ export const HYBRID_CURRICULA: HybridCurriculum[] = [
 |---|---|---|
 | `courseId` | 강좌와 커리큘럼 연결 키 | `courses.ts`의 `id`와 정확히 같아야 한다. |
 | `port`, `folder`, `runCommand` | 기존 로컬 서버 미리보기 정보 | 브라우저 미리보기에서는 현재 사용하지 않지만 인터페이스상 필수다. 신규 강좌에는 `0`, 빈 문자열을 임시로 사용한다. |
-| `archiveUrl` | 독립 실행 프로젝트 ZIP | 선택값. `public/projects/`에 둔 파일은 `/projects/...zip`으로 연결한다. |
 | `modules` | 준비물 목록 및 필수 모듈 판정 | `필수`는 모두 필요하고 `선택`은 없어도 된다. 같은 `choiceGroup`의 `택1` 모듈은 하나 이상 필요하다. |
 | `mockNote` | 연결 제약 안내 | 현재 서버 미리보기의 안내문으로도 사용된다. |
 | `examples` | 바이브 코딩 시작 예시 | 예시 하나에 세 키워드를 모두 넣으면 한 번에 잠금 해제가 가능하다. |
