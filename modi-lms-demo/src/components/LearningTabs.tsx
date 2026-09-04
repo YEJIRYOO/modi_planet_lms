@@ -114,11 +114,11 @@ export default function LearningTabs({ courseType, courseId, courseTitle, locale
               ? (courseId === '6'
                   ? <BrowserHardwarePreview />
                   : project?.previewUrl
-                    ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} />
+                    ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
                     : <GamePreviewTab cur={cur} />)
               : locked('preview', '아직 미리볼 결과가 없어요'))
           : project?.previewUrl
-            ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} />
+            ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
             : <PreviewTab result={result} courseType={courseType} />)}
 
         {active === 'note' && (cur

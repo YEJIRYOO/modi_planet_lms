@@ -5,6 +5,7 @@ export interface CourseProject {
   previewUrl?: string;
   downloadUrl?: string;
   previewNote?: string;
+  modiBridge?: boolean;
 }
 
 export interface Course {
@@ -25,12 +26,12 @@ export const COMPLETED_PROJECTS_DOWNLOAD_URL = '/projects/completed.zip';
 export const COURSES: Course[] = [
   { id: '1', title: '장애물 회피 자동차', description: '조이스틱으로 조종하고 장애물을 피하는 MODI 자동차', type: 'HW', goal: '자율주행 자동차 완성', modules: ['joystick', 'tof', 'motor_a'] },
   { id: '2', title: '세포 생물학 탐험', description: 'DNA 구조를 인터랙티브하게 학습', type: 'SW', goal: 'DNA 구조 시뮬레이션' },
-  { id: '3', title: '1942', description: '자이로로 조종하고 버튼으로 발사하는 비행 슈팅', type: 'HW_SW', goal: 'IMU·버튼으로 조종하는 슈팅 게임', modules: ['imu', 'button', 'motor_a'], project: { downloadUrl: '/projects/1942-standalone.zip' } },
-  { id: '4', title: 'Tilt Match', description: 'MODI LED 색과 같은 쪽으로 기울여 점수를 얻는 반응 게임', type: 'HW_SW', goal: 'LED 색 판별 + 기울기 반응 게임', modules: ['imu', 'led'], project: { downloadUrl: '/projects/tilt-match-standalone.zip' } },
-  { id: '5', title: 'Loop Studio', description: '다이얼 또는 조이스틱으로 볼륨을 조절하고 버튼으로 재생하는 8칸 음악 시퀀서', type: 'HW_SW', goal: 'MODI 스피커로 연주하는 시퀀서', modules: ['dial', 'button', 'speaker'], project: { downloadUrl: '/projects/music-studio-standalone.zip' } },
+  { id: '3', title: '1942', description: '자이로로 조종하고 버튼으로 발사하는 비행 슈팅', type: 'HW_SW', goal: 'IMU·버튼으로 조종하는 슈팅 게임', modules: ['imu', 'button', 'motor_a'], project: { previewUrl: '/projects/1942/index.html', downloadUrl: '/projects/1942-standalone.zip', previewNote: '사이트에서 바로 실행됩니다. 연결된 IMU·버튼 또는 키보드·슬라이더로 조작하세요.', modiBridge: true } },
+  { id: '4', title: 'Tilt Match', description: 'MODI LED 색과 같은 쪽으로 기울여 점수를 얻는 반응 게임', type: 'HW_SW', goal: 'LED 색 판별 + 기울기 반응 게임', modules: ['imu', 'led'], project: { previewUrl: '/projects/tilt-match/index.html', downloadUrl: '/projects/tilt-match-standalone.zip', previewNote: '사이트에서 바로 실행됩니다. IMU 또는 화면 슬라이더로 색 방향을 맞추세요.', modiBridge: true } },
+  { id: '5', title: 'Loop Studio', description: '다이얼 또는 조이스틱으로 볼륨을 조절하고 버튼으로 재생하는 8칸 음악 시퀀서', type: 'HW_SW', goal: 'MODI 스피커로 연주하는 시퀀서', modules: ['dial', 'button', 'speaker'], project: { previewUrl: '/projects/music-studio/index.html', downloadUrl: '/projects/music-studio-standalone.zip', previewNote: '사이트에서 패턴·템포·볼륨을 조절하고 컴퓨터 오디오로 바로 연주할 수 있습니다.' } },
   { id: '6', title: 'Tilt & Click 연결 점검', description: '자이로를 기울이고 버튼을 눌러 HW+SW 연결을 한 번에 확인', type: 'HW_SW', goal: '자이로·버튼 실시간 입력 점검', modules: ['imu', 'button'] },
-  { id: '7', title: '함수 그래프 챌린지', description: '다이얼로 계수를 바꾸고 조이스틱으로 항을 골라 목표 함수의 개형을 맞추는 수학 게임', type: 'HW_SW', goal: '일차·절댓값·이차함수 그래프 정확도 90% 달성', modules: ['dial', 'joystick', 'button'], project: { downloadUrl: '/projects/function-shape-standalone.zip' } },
-  { id: '8', title: '구구단 퀘스트', description: '조이스틱으로 답을 만들고 버튼으로 제출하는 10문제 구구단 게임', type: 'HW_SW', goal: '난이도별 구구단 10문제 완주', modules: ['joystick', 'button', 'dial'], project: { downloadUrl: '/projects/times-table-quest-standalone.zip' } },
+  { id: '7', title: '함수 그래프 챌린지', description: '다이얼로 계수를 바꾸고 조이스틱으로 항을 골라 목표 함수의 개형을 맞추는 수학 게임', type: 'HW_SW', goal: '일차·절댓값·이차함수 그래프 정확도 90% 달성', modules: ['dial', 'joystick', 'button'], project: { previewUrl: '/projects/function-shape/index.html', downloadUrl: '/projects/function-shape-standalone.zip', previewNote: '사이트의 다이얼과 방향 버튼으로 계수를 조절하고 그래프를 제출하세요.' } },
+  { id: '8', title: '구구단 퀘스트', description: '조이스틱으로 답을 만들고 버튼으로 제출하는 10문제 구구단 게임', type: 'HW_SW', goal: '난이도별 구구단 10문제 완주', modules: ['joystick', 'button', 'dial'], project: { previewUrl: '/projects/times-table-quest/index.html', downloadUrl: '/projects/times-table-quest-standalone.zip', previewNote: '사이트의 조이스틱·다이얼·제출 버튼으로 10문제를 바로 풀 수 있습니다.' } },
   {
     id: '9',
     title: '손가락 마법 그림판',
@@ -87,7 +88,9 @@ export const COURSES: Course[] = [
     goal: '환경을 균형 있게 관리해 5단계 식물 성장 완료',
     modules: ['network', 'env', 'dial'],
     project: {
+      previewUrl: '/projects/classroom-garden/index.html',
       downloadUrl: '/projects/classroom-garden-standalone.zip',
+      previewNote: '사이트의 mock 환경 조절 패널로 온도·습도·빛·물·거리를 바꾸며 식물을 키우세요.',
     },
   },
 ];

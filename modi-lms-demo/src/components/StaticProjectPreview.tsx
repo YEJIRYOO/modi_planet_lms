@@ -1,12 +1,25 @@
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { modiWebSerial } from '../lib/modiWebSerial';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
 
-export default function StaticProjectPreview({ title, previewUrl, downloadUrl, note }: {
+export default function StaticProjectPreview({ title, previewUrl, downloadUrl, note, modiBridge = false }: {
   title: string;
   previewUrl: string;
   downloadUrl?: string;
   note?: string;
+  modiBridge?: boolean;
 }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const device = useSyncExternalStore(modiWebSerial.subscribe, modiWebSerial.getSnapshot, modiWebSerial.getSnapshot);
+  const sendDevice = () => {
+    if (modiBridge) frameRef.current?.contentWindow?.postMessage({ type: 'modi-hardware-state', device }, location.origin);
+  };
+
+  useEffect(() => {
+    if (modiBridge) frameRef.current?.contentWindow?.postMessage({ type: 'modi-hardware-state', device }, location.origin);
+  }, [device, modiBridge]);
+
   return (
     <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -20,9 +33,11 @@ export default function StaticProjectPreview({ title, previewUrl, downloadUrl, n
         </span>
       </div>
       <iframe
+        ref={frameRef}
         src={previewUrl}
         title={`${title} 미리보기`}
         allow="camera; fullscreen; autoplay; gamepad; clipboard-write"
+        onLoad={sendDevice}
         style={{ flex: 1, minHeight: 340, width: '100%', border: `1px solid ${t.line}`, borderRadius: t.rMd, background: '#111827' }}
       />
     </div>

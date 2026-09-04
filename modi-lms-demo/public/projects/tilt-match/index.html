@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tilt Match · MODI+</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="aurora a"></div><div class="aurora b"></div><main>
+  <header><div><p>MODI+ REACTION LAB</p><h1>Tilt Match</h1><span>LED 색과 같은 불빛 쪽으로 기울이세요</span></div><aside><div><b id="round">01</b><small>ROUND</small></div><div><b id="score">00</b><small>SCORE</small></div></aside></header>
+  <section class="arena">
+    <button id="left" class="light"><em>←</em><span></span><b>LEFT</b></button>
+    <div class="center"><div class="modi"><i></i><div id="target" class="target"></div><small>MODI LED</small></div><p id="message">IMU를 중앙에 두세요</p><small id="status">연결 중</small><div class="tilt-meter"><span>−</span><div><i id="needle"></i></div><span>+</span></div></div>
+    <button id="right" class="light"><em>→</em><span></span><b>RIGHT</b></button>
+  </section>
+  <footer><label>Mock pitch <input id="pitch" type="range" min="-60" max="60" value="0"></label><label>Mock roll <input id="roll" type="range" min="-60" max="60" value="0"></label><button id="zero">IMU 다시 보정</button></footer>
+</main><div id="calibration" class="calibration" role="dialog" aria-modal="true" aria-labelledby="cal-title"><div class="cal-card"><small>IMU CALIBRATION</small><b id="cal-arrow">·</b><h2 id="cal-title">오른쪽으로 기울여보세요</h2><p id="cal-state">중립 위치를 측정합니다. 잠시 수평으로 유지하세요.</p><p id="cal-direction">현재 감지: 중립</p><div class="cal-progress"><i id="cal-progress"></i></div><button id="cal-skip">Skip · 기본 방향 사용</button></div></div><script src="browser-api.js"></script><script src="app.js"></script></body></html>
