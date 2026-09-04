@@ -57,9 +57,10 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
   const cur = useMemo(() => (courseType === 'HW_SW' ? findHybridCurriculum(courseId) : undefined), [courseType, courseId]);
   const [matched, setMatched] = useState<string[]>([]);
   const unlocked = !!cur && matched.length >= cur.keywords.length;
+  const softwareLocked = courseType === 'SW' && !!project?.vibeBrief && !result;
 
-  const locked = (icon: IconName, title: string) => (
-    <EmptyState icon={icon} title={title} hint="바이브 코딩에서 정해야 할 세 가지를 모두 설명하면 열립니다." />
+  const locked = (icon: IconName, title: string, hint = '바이브 코딩에서 정해야 할 세 가지를 모두 설명하면 열립니다.') => (
+    <EmptyState icon={icon} title={title} hint={hint} />
   );
 
   return (
@@ -70,7 +71,7 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
           const on = active === key;
           const meta = TAB_META[key];
           // 잠긴 탭도 보이게 둔다 — 무엇이 남았는지 알 수 있어야 한다.
-          const isLocked = !!cur && !unlocked && (key === 'code' || key === 'preview' || key === 'note');
+          const isLocked = ((!!cur && !unlocked) || softwareLocked) && (key === 'code' || key === 'preview' || key === 'note');
           return (
             <button
               key={key}
@@ -128,13 +129,17 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
                     ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
                     : <GamePreviewTab cur={cur} />)
               : locked('preview', '아직 미리볼 결과가 없어요'))
-          : project?.previewUrl
-            ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
-            : <PreviewTab result={result} courseType={courseType} />)}
+          : softwareLocked
+            ? locked('preview', '아직 미리보기가 열리지 않았어요', '바이브 코딩에서 현재 강좌와 관련된 요청을 완료하면 열립니다.')
+            : project?.previewUrl
+              ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} modiBridge={project.modiBridge} />
+              : <PreviewTab result={result} courseType={courseType} />)}
 
         {active === 'note' && (cur
           ? (unlocked ? <LearningNotesTab result={{ learning_notes: cur.notes }} /> : locked('note', '아직 학습 노트가 없어요'))
-          : <LearningNotesTab result={result} />)}
+          : softwareLocked
+            ? locked('note', '아직 학습 노트가 없어요', '바이브 코딩 결과가 완성되면 학습 노트가 열립니다.')
+            : <LearningNotesTab result={result} />)}
 
         {active === 'modi' && <ModitorTab locale={locale} blocklyXml={result?.blockly_xml ?? undefined} />}
       </div>
