@@ -1,4 +1,10 @@
 let garden;
+let hardware = null;
+let lastButton = false;
+let lastLed = '';
+addEventListener('message', (event) => {
+  if (event.origin === location.origin && event.data?.type === 'modi-hardware-state') hardware = event.data.device;
+});
 const band = (value, low, high, margin) => low <= value && value <= high ? 1 : Math.max(0, 1 - (value < low ? low - value : value - high) / margin);
 const reset = (pace = 'lesson') => {
   const now = performance.now();
@@ -15,18 +21,23 @@ window.fetch = (input, options) => {
   const now = performance.now();
   const dt = Math.min(1, Math.max(0, (now - garden.lastUpdate) / 1000));
   garden.lastUpdate = now;
-  const temperature = Number(body.temperature) || 23;
-  const humidity = Number(body.humidity) || 55;
-  const light = Number(body.light) || 65;
-  const dial = Number(body.dial) || 0;
-  const distance = Number(body.distance) || 100;
+  const has = (type) => hardware?.modules?.some((module) => module.type === type);
+  const live = hardware?.status === 'connected' && has('env') && has('dial') && has('button') && has('tof') && has('led');
+  const temperature = live ? hardware.env?.temperature ?? 23 : Number(body.temperature) || 23;
+  const humidity = live ? hardware.env?.humidity ?? 55 : Number(body.humidity) || 55;
+  const light = live ? hardware.env?.illuminance ?? 65 : Number(body.light) || 65;
+  const dial = live ? hardware.dial?.turn ?? 0 : Number(body.dial) || 0;
+  const distance = live ? hardware.tofDistance ?? 100 : Number(body.distance) || 100;
   const tempQuality = band(temperature, 20, 26, 10);
   const humidityQuality = band(humidity, 40, 70, 30);
   const lightQuality = band(light, 40, 82, 35);
   const environmentQuality = (tempQuality + humidityQuality + lightQuality) / 3;
   garden.soil = Math.max(0, garden.soil - dt * (.025 + .02 * lightQuality));
   const waterAmount = Math.round((5 + dial * .22) * 10) / 10;
-  if (body.button) {
+  const pressed = live ? hardware.button?.pressed === true : body.button;
+  const watered = pressed && !lastButton;
+  lastButton = pressed;
+  if (watered) {
     const before = garden.soil;
     garden.soil = Math.min(100, garden.soil + waterAmount);
     garden.waters += 1;
@@ -54,8 +65,16 @@ window.fetch = (input, options) => {
   }
   const stage = [0, 18, 38, 62, 84].reduce((result, threshold, index) => garden.growth >= threshold ? index : result, 0);
   const status = garden.soil < 25 ? 'thirsty' : garden.soil > 86 ? 'overwatered' : light < 28 ? 'dark' : temperature < 17 ? 'cold' : temperature > 30 ? 'hot' : humidity < 30 ? 'dry_air' : environmentQuality > .82 && garden.happiness > 65 ? 'happy' : 'growing';
+  if (live) {
+    const color = status === 'happy' || status === 'growing' ? [60, 255, 105] : status === 'thirsty' ? [40, 120, 255] : status === 'dark' || status === 'cold' || status === 'dry_air' ? [255, 190, 35] : [255, 70, 35];
+    const key = color.join(',');
+    if (key !== lastLed) {
+      lastLed = key;
+      parent.postMessage({ type: 'modi-command', action: 'led', red: color[0], green: color[1], blue: color[2] }, location.origin);
+    }
+  }
   const event = now < garden.eventUntil ? garden.event : null;
   const pose = event === 'water' || event === 'pet' ? 3 : ['thirsty', 'overwatered', 'dark', 'cold', 'hot', 'dry_air'].includes(status) ? 2 : status === 'happy' ? 1 : 0;
   const elapsed = (now - garden.started) / 1000;
-  return json({ mode: 'mock', pace: garden.pace, elapsed, remaining: Math.max(0, duration - elapsed), temperature, humidity, light, dial, distance, water_amount: waterAmount, soil: Math.round(garden.soil * 10) / 10, happiness: Math.round(garden.happiness * 10) / 10, environment_quality: Math.round(environmentQuality * 100), growth: Math.round(garden.growth * 100) / 100, stage, pose, status, event, score: Math.round(garden.score), waters: garden.waters, pets: garden.pets, complete: garden.growth >= 100 });
+  return json({ mode: live ? 'real' : 'mock', pace: garden.pace, elapsed, remaining: Math.max(0, duration - elapsed), temperature, humidity, light, dial, distance, water_amount: waterAmount, soil: Math.round(garden.soil * 10) / 10, happiness: Math.round(garden.happiness * 10) / 10, environment_quality: Math.round(environmentQuality * 100), growth: Math.round(garden.growth * 100) / 100, stage, pose, status, event, score: Math.round(garden.score), waters: garden.waters, pets: garden.pets, complete: garden.growth >= 100 });
 };

@@ -5,6 +5,7 @@ let latched = false;
 let left = 'blue';
 let right = 'orange';
 let target = Math.random() < .5 ? 'blue' : 'orange';
+let lastLed = '';
 addEventListener('message', (event) => {
   if (event.origin === location.origin && event.data?.type === 'modi-hardware-state') hardware = event.data.device;
 });
@@ -37,6 +38,11 @@ window.fetch = (input, options) => {
     score = Math.max(0, score + (feedback === 'correct' ? 1 : -1));
   } else {
     feedback = direction === (left === target ? 'left' : 'right') ? 'correct' : 'wrong';
+  }
+  if (live && target !== lastLed) {
+    lastLed = target;
+    const color = target === 'blue' ? [20, 105, 255] : [255, 95, 25];
+    parent.postMessage({ type: 'modi-command', action: 'led', red: color[0], green: color[1], blue: color[2] }, location.origin);
   }
   return json({ mode: live ? 'real' : 'mock', controls, pitch: controls.pitch, roll: controls.roll, direction, left, right, target_color: target, score, round, feedback });
 };

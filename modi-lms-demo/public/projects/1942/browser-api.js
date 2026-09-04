@@ -1,4 +1,6 @@
 let hardware = null;
+let lastLed = '';
+let lastMotor = null;
 addEventListener('message', (event) => {
   if (event.origin === location.origin && event.data?.type === 'modi-hardware-state') hardware = event.data.device;
 });
@@ -9,6 +11,21 @@ window.fetch = (input, options) => {
   if (path === '/api/state') {
     const body = JSON.parse(options?.body || '{}');
     const live = hardware?.status === 'connected' && hardware.imu && hardware.buttonPressed !== null;
+    if (live) {
+      const led = hardware.buttonPressed ? '255,70,20' : '20,90,255';
+      if (led !== lastLed) {
+        lastLed = led;
+        const [red, green, blue] = led.split(',').map(Number);
+        parent.postMessage({ type: 'modi-command', action: 'led', red, green, blue }, location.origin);
+      }
+      if (hardware.modules?.some((module) => module.type === 'motor')) {
+        const speed = Math.round(Math.max(-90, Math.min(90, hardware.imu.roll)) * 60 / 90);
+        if (speed !== lastMotor) {
+          lastMotor = speed;
+          parent.postMessage({ type: 'modi-command', action: 'motor', speed }, location.origin);
+        }
+      }
+    }
     return response({
       mode: live ? 'real' : 'mock',
       controls: live ? hardware.imu : { pitch: Number(body.pitch) || 0, roll: Number(body.roll) || 0 },

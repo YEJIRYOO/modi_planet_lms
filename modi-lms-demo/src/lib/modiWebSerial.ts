@@ -18,7 +18,12 @@ export type ModiSerialStatus = 'unsupported' | 'idle' | 'connecting' | 'connecte
 export interface ModiSerialSnapshot {
   status: ModiSerialStatus;
   modules: ConnectedModiModule[];
-  imu: { roll: number; pitch: number } | null;
+  imu: { roll: number; pitch: number; yaw: number } | null;
+  dial: { turn: number; speed: number } | null;
+  joystick: { x: number; y: number; direction: 'up' | 'down' | 'left' | 'right' | 'origin' } | null;
+  env: { illuminance: number; temperature: number; humidity: number; volume: number } | null;
+  tofDistance: number | null;
+  button: { clicked: boolean; doubleClicked: boolean; pressed: boolean; toggled: boolean } | null;
   buttonPressed: boolean | null;
   error: string | null;
 }
@@ -81,7 +86,8 @@ class ModiWebSerial {
   private listeners = new Set<() => void>();
   private snapshot: ModiSerialSnapshot = {
     status: typeof navigator !== 'undefined' && serialApi() ? 'idle' : 'unsupported',
-    modules: [], imu: null, buttonPressed: null, error: null,
+    modules: [], imu: null, dial: null, joystick: null, env: null, tofDistance: null,
+    button: null, buttonPressed: null, error: null,
   };
 
   constructor() {
@@ -183,7 +189,9 @@ class ModiWebSerial {
   /** pymodi-plus와 동일한 property 구독 요청: sampling frequency 91 ≈ 100ms. */
   private async requestTestSensors() {
     if (this.snapshot.status !== 'connected') return;
-    const sensors = this.snapshot.modules.filter((module) => module.type === 'imu' || module.type === 'button');
+    const sensors = this.snapshot.modules.filter((module) =>
+      module.type === 'imu' || module.type === 'button' || module.type === 'dial' ||
+      module.type === 'joystick' || module.type === 'env' || module.type === 'tof');
     for (const module of sensors) await this.send(packet(0x03, 0, module.id, [2, 0, 91, 0]));
   }
 
@@ -195,13 +203,68 @@ class ModiWebSerial {
     const bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0));
     const view = new DataView(bytes.buffer);
 
-    if (module.type === 'imu' && bytes.length >= 8) {
+    if (module.type === 'imu' && bytes.length >= 12) {
       const roll = view.getFloat32(0, true);
       const pitch = view.getFloat32(4, true);
-      if (Number.isFinite(roll) && Number.isFinite(pitch)) this.update({ imu: { roll, pitch } });
-    } else if (module.type === 'button' && bytes.length >= 6) {
-      this.update({ buttonPressed: view.getUint16(4, true) === 100 });
+      const yaw = view.getFloat32(8, true);
+      if ([roll, pitch, yaw].every(Number.isFinite)) this.update({ imu: { roll, pitch, yaw } });
+    } else if (module.type === 'button' && bytes.length >= 8) {
+      const button = {
+        clicked: view.getUint16(0, true) === 100,
+        doubleClicked: view.getUint16(2, true) === 100,
+        pressed: view.getUint16(4, true) === 100,
+        toggled: view.getUint16(6, true) === 100,
+      };
+      this.update({ button, buttonPressed: button.pressed });
+    } else if (module.type === 'dial' && bytes.length >= 4) {
+      this.update({ dial: { turn: view.getInt16(0, true), speed: view.getInt16(2, true) } });
+    } else if (module.type === 'joystick' && bytes.length >= 4) {
+      const x = view.getInt16(0, true);
+      const y = view.getInt16(2, true);
+      const direction = Math.max(Math.abs(x), Math.abs(y)) < 35
+        ? 'origin'
+        : Math.abs(x) >= Math.abs(y)
+          ? x > 0 ? 'right' : 'left'
+          : y > 0 ? 'up' : 'down';
+      this.update({ joystick: { x, y, direction } });
+    } else if (module.type === 'env' && bytes.length >= 8) {
+      this.update({ env: {
+        illuminance: view.getInt16(0, true),
+        temperature: view.getInt16(2, true),
+        humidity: view.getInt16(4, true),
+        volume: view.getInt16(6, true),
+      } });
+    } else if (module.type === 'tof' && bytes.length >= 4) {
+      const tofDistance = view.getFloat32(0, true);
+      if (Number.isFinite(tofDistance)) this.update({ tofDistance });
     }
+  }
+
+  private async setProperty(type: ModiModuleType, property: number, bytes: number[]) {
+    if (this.snapshot.status !== 'connected') return;
+    const module = this.snapshot.modules.find((item) => item.type === type);
+    if (module) await this.send(packet(0x04, property, module.id, bytes));
+  }
+
+  async setLed(red: number, green: number, blue: number) {
+    const bytes = new Uint8Array(6);
+    const view = new DataView(bytes.buffer);
+    [red, green, blue].forEach((value, index) => view.setUint16(index * 2, Math.max(0, Math.min(255, Math.round(value))), true));
+    await this.setProperty('led', 16, [...bytes]);
+  }
+
+  async setSpeaker(frequency: number, volume: number) {
+    const bytes = new Uint8Array(4);
+    const view = new DataView(bytes.buffer);
+    view.setUint16(0, Math.max(0, Math.min(65535, Math.round(frequency))), true);
+    view.setUint16(2, Math.max(0, Math.min(100, Math.round(volume))), true);
+    await this.setProperty('speaker', 16, [...bytes]);
+  }
+
+  async setMotorSpeed(speed: number) {
+    const bytes = new Uint8Array(4);
+    new DataView(bytes.buffer).setInt32(0, Math.max(-100, Math.min(100, Math.round(speed))), true);
+    await this.setProperty('motor', 17, [...bytes]);
   }
 
   private touch(id: number) {
@@ -224,7 +287,10 @@ class ModiWebSerial {
     this.buffer = '';
     if (this.sensorTimer != null) window.clearInterval(this.sensorTimer);
     this.sensorTimer = null;
-    this.update({ status: serialApi() ? 'idle' : 'unsupported', modules: [], imu: null, buttonPressed: null, error: null });
+    this.update({
+      status: serialApi() ? 'idle' : 'unsupported', modules: [], imu: null, dial: null,
+      joystick: null, env: null, tofDistance: null, button: null, buttonPressed: null, error: null,
+    });
   }
 }
 

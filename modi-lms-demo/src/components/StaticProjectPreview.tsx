@@ -20,6 +20,23 @@ export default function StaticProjectPreview({ title, previewUrl, downloadUrl, n
     if (modiBridge) frameRef.current?.contentWindow?.postMessage({ type: 'modi-hardware-state', device }, location.origin);
   }, [device, modiBridge]);
 
+  useEffect(() => {
+    if (!modiBridge) return;
+    const receiveCommand = (event: MessageEvent) => {
+      if (event.origin !== location.origin || event.source !== frameRef.current?.contentWindow || event.data?.type !== 'modi-command') return;
+      const command = event.data as { action?: string; red?: number; green?: number; blue?: number; frequency?: number; volume?: number; speed?: number };
+      if (command.action === 'led') void modiWebSerial.setLed(command.red ?? 0, command.green ?? 0, command.blue ?? 0);
+      if (command.action === 'speaker') void modiWebSerial.setSpeaker(command.frequency ?? 0, command.volume ?? 0);
+      if (command.action === 'motor') void modiWebSerial.setMotorSpeed(command.speed ?? 0);
+    };
+    window.addEventListener('message', receiveCommand);
+    return () => {
+      window.removeEventListener('message', receiveCommand);
+      void modiWebSerial.setMotorSpeed(0);
+      void modiWebSerial.setSpeaker(0, 0);
+    };
+  }, [modiBridge]);
+
   return (
     <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

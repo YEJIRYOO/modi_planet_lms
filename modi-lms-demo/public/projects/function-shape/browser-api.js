@@ -7,6 +7,13 @@ let state;
 let nextAt = 0;
 let totalScore = 0;
 let round = 0;
+let hardware = null;
+let lastButton = false;
+let lastDirection = 'origin';
+let lastRepeat = 0;
+addEventListener('message', (event) => {
+  if (event.origin === location.origin && event.data?.type === 'modi-hardware-state') hardware = event.data.device;
+});
 const pick = ([low, high], nonzero = false) => {
   let value;
   do value = Math.round((low + Math.random() * (high - low)) * 2) / 2; while (nonzero && value === 0);
@@ -44,20 +51,34 @@ window.fetch = (input, options) => {
   }
   const body = JSON.parse(options?.body || '{}');
   const spec = specs[state.family];
-  if (body.joystick === 'left') state.selectedIndex = (state.selectedIndex - 1 + spec.names.length) % spec.names.length;
-  if (body.joystick === 'right') state.selectedIndex = (state.selectedIndex + 1) % spec.names.length;
+  const has = (type) => hardware?.modules?.some((module) => module.type === type);
+  const live = hardware?.status === 'connected' && has('dial') && has('joystick') && has('button');
+  const rawDirection = live ? hardware.joystick?.direction ?? 'origin' : body.joystick;
+  let direction = rawDirection;
+  if (live && rawDirection !== 'origin' && rawDirection === lastDirection && performance.now() - lastRepeat < (rawDirection === 'up' || rawDirection === 'down' ? 100 : 420)) direction = 'origin';
+  if (direction !== 'origin') lastRepeat = performance.now();
+  lastDirection = rawDirection;
+  if (direction === 'left') state.selectedIndex = (state.selectedIndex - 1 + spec.names.length) % spec.names.length;
+  if (direction === 'right') state.selectedIndex = (state.selectedIndex + 1) % spec.names.length;
   const selected = spec.names[state.selectedIndex];
-  if (body.joystick === 'up' || body.joystick === 'down') state.nudges[selected] = Math.round((state.nudges[selected] + (body.joystick === 'up' ? .1 : -.1)) * 10) / 10;
+  if (direction === 'up' || direction === 'down') state.nudges[selected] = Math.round((state.nudges[selected] + (direction === 'up' ? .1 : -.1)) * 10) / 10;
   const [low, high] = spec.ranges[selected];
-  const dial = Math.max(0, Math.min(100, Number(body.dial) || 0));
+  const dial = Math.max(0, Math.min(100, live ? hardware.dial?.turn ?? 0 : Number(body.dial) || 0));
   state.params[selected] = Math.round(Math.max(low, Math.min(high, low + dial / 100 * (high - low) + state.nudges[selected])) * 10) / 10;
-  if (body.button && !nextAt) {
+  const pressed = live ? hardware.button?.pressed === true : body.button;
+  const submitted = pressed && !lastButton;
+  lastButton = pressed;
+  if (submitted && !nextAt) {
     state.accuracy = grade();
     state.feedback = state.accuracy >= 90 ? 'matched' : state.accuracy >= 70 ? 'close' : 'try_again';
     if (state.accuracy >= 90) {
       totalScore += state.accuracy;
       nextAt = performance.now() + 1800;
     }
+    if (live && has('led')) {
+      const color = state.accuracy >= 90 ? [80, 255, 100] : [255, 90, 30];
+      parent.postMessage({ type: 'modi-command', action: 'led', red: color[0], green: color[1], blue: color[2] }, location.origin);
+    }
   }
-  return json({ mode: 'mock', family: state.family, round, params: state.params, target: state.target, selected, dial, accuracy: state.accuracy, feedback: state.feedback, total_score: totalScore });
+  return json({ mode: live ? 'real' : 'mock', family: state.family, round, params: state.params, target: state.target, selected, dial, accuracy: state.accuracy, feedback: state.feedback, total_score: totalScore });
 };

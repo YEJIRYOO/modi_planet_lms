@@ -286,8 +286,13 @@ courseId === '7'
 현재 브라우저 연결 계층은 다음을 제공한다.
 
 - 네트워크, 배터리, 환경, IMU, 버튼, 다이얼, 조이스틱, ToF, 디스플레이, 모터, LED, 스피커의 모듈 종류 탐색
-- IMU `roll`, `pitch` 실시간값
-- 버튼 `pressed` 실시간값
+- IMU `roll`, `pitch`, `yaw` 실시간값
+- 버튼 `clicked`, `doubleClicked`, `pressed`, `toggled` 실시간값
+- 다이얼 `turn`, `speed` 실시간값
+- 조이스틱 `x`, `y`, `direction` 실시간값
+- 환경 센서 `illuminance`, `temperature`, `humidity`, `volume` 실시간값
+- ToF `distance` 실시간값
+- LED RGB, 스피커 주파수·볼륨, 모터 속도 출력
 
 목록에서 모듈이 보인다는 것과 센서값을 읽을 수 있다는 것은 별개다. 새로운 센서값을 미리보기에서 사용하려면 다음을 모두 구현한다.
 
