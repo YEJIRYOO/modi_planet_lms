@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { COURSES, type Course } from '../data/courses';
+import { VISIBLE_COURSES, type Course } from '../data/courses';
 import { getAllProgress, resetProgress } from '../lib/progressStore';
 import { TYPE_META } from '../data/designDoc';
 import { t } from '../styles/tokens';
@@ -11,8 +11,8 @@ export default function MyPage() {
   const nav = useNavigate();
   const progress = getAllProgress();
   const teacher = localStorage.getItem('demo_role') === 'teacher';
-  const inProgress = COURSES.filter((course) => progress[course.id] === 'in_progress');
-  const done = COURSES.filter((course) => progress[course.id] === 'done');
+  const inProgress = VISIBLE_COURSES.filter((course) => progress[course.id] === 'in_progress');
+  const done = VISIBLE_COURSES.filter((course) => progress[course.id] === 'done');
 
   return (
     <Page>

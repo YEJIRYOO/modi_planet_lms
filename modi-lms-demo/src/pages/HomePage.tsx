@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { COURSES } from '../data/courses';
+import { VISIBLE_COURSES } from '../data/courses';
 import { LEVELS } from '../data/levels';
 import { getAllProgress } from '../lib/progressStore';
 import { t } from '../styles/tokens';
@@ -14,9 +14,9 @@ export default function HomePage() {
      진행 중인 것을 위로 올리고, 아래 섹션은 아직 시작하지 않은 강좌를 먼저 보여
      "대시보드 → 목록" 으로 성격을 나눈다. */
   const progress = getAllProgress();
-  const resuming = COURSES.filter((c) => progress[c.id] === 'in_progress');
-  const untouched = COURSES.filter((c) => !progress[c.id]);
-  const featured = (untouched.length > 0 ? untouched : COURSES).slice(0, 3);
+  const resuming = VISIBLE_COURSES.filter((c) => progress[c.id] === 'in_progress');
+  const untouched = VISIBLE_COURSES.filter((c) => !progress[c.id]);
+  const featured = (untouched.length > 0 ? untouched : VISIBLE_COURSES).slice(0, 3);
 
   return (
     <Page>
@@ -45,10 +45,10 @@ export default function HomePage() {
       </section>
 
       <section style={{ marginBottom: 44 }}>
-        <Kicker>난이도 바로가기</Kicker>
+        <Kicker>학년별 바로가기</Kicker>
         <div className="grid-levels">
           {LEVELS.map((lv) => (
-            <button key={lv.k} type="button" className="lift lift--card" onClick={() => nav('/courses')}
+            <button key={lv.k} type="button" className="lift lift--card" onClick={() => nav(`/courses?level=${lv.value}`)}
               style={{ fontFamily: t.font, cursor: 'pointer', display: 'block', width: '100%', padding: 0, overflow: 'hidden', textAlign: 'left', background: t.surface, border: `1px solid ${t.line}`, borderRadius: t.rMd, boxShadow: t.shSm }}>
               <img src={lv.thumb} alt="" width={300} height={198}
                 style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '300 / 198', objectFit: 'cover' }} />

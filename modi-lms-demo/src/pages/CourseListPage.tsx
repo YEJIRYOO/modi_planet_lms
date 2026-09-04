@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { COMPLETED_PROJECTS_DOWNLOAD_URL, COURSES } from '../data/courses';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { COMPLETED_PROJECTS_DOWNLOAD_URL, VISIBLE_COURSES } from '../data/courses';
 import type { CourseType } from '../types';
+import { LEVELS, type CourseLevel } from '../data/levels';
 import { t } from '../styles/tokens';
 import { Chip, Kicker, Page, EmptyState } from '../components/ui';
 import { CourseCard } from '../components/CourseCard';
@@ -16,8 +17,15 @@ const FILTERS: { value: '전체' | CourseType; label: string }[] = [
 
 export default function CourseListPage() {
   const nav = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [type, setType] = useState<'전체' | CourseType>('전체');
-  const list = COURSES.filter((c) => type === '전체' || c.type === type);
+  const levelParam = searchParams.get('level');
+  const level: '전체' | CourseLevel = levelParam === 'elementary' || levelParam === 'middle' ? levelParam : '전체';
+  const list = VISIBLE_COURSES.filter((course) =>
+    (type === '전체' || course.type === type) && (level === '전체' || course.level === level));
+  const setLevel = (value: '전체' | CourseLevel) => {
+    setSearchParams(value === '전체' ? {} : { level: value });
+  };
 
   return (
     <Page>
@@ -28,6 +36,11 @@ export default function CourseListPage() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '18px 0 26px', borderBottom: `1px solid ${t.line}`, flexWrap: 'wrap' }}>
+        <span style={{ color: t.muted, fontSize: 12, fontWeight: 700 }}>학년</span>
+        <Chip active={level === '전체'} onClick={() => setLevel('전체')}>전체</Chip>
+        {LEVELS.map((item) => <Chip key={item.value} active={level === item.value} onClick={() => setLevel(item.value)}>{item.name}</Chip>)}
+        <span style={{ width: 1, height: 20, margin: '0 4px', background: t.line }} />
+        <span style={{ color: t.muted, fontSize: 12, fontWeight: 700 }}>유형</span>
         {FILTERS.map((f) => (
           <Chip key={f.value} active={type === f.value} onClick={() => setType(f.value)}>{f.label}</Chip>
         ))}

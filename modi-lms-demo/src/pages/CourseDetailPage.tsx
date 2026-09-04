@@ -9,6 +9,7 @@ import { Btn, Kicker, TypeBadge, Page, EmptyState } from '../components/ui';
 import { DesignDocViewer } from '../components/DesignDocViewer';
 import { CourseThumb } from '../components/CourseThumb';
 import { Icon, type IconName } from '../components/icons';
+import { LEVEL_NAME } from '../data/levels';
 
 // 학습 흐름 단계별 아이콘 — 탭 이름과 1:1 대응.
 const STEP_ICON: Record<string, IconName> = {
@@ -56,6 +57,7 @@ export default function CourseDetailPage() {
         <div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
             <TypeBadge type={course.type} size="lg" />
+            <span style={{ fontSize: 13, color: t.coralStrong, fontWeight: 700 }}>{LEVEL_NAME[course.level]}</span>
             <span style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{m.full}</span>
           </div>
           <h1 style={{ margin: 0, fontSize: 'clamp(28px,3.6vw,40px)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.15, color: t.ink }}>{course.title}</h1>

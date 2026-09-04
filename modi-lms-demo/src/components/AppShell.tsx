@@ -44,11 +44,11 @@ export function AppShell() {
           {navItem('/ai-lab', 'AI LAB', 'sparkle')}
         </div>
         <div className="app-shell__levels-heading" style={{ marginTop: 22, marginBottom: 10, padding: '0 6px', fontSize: 12, fontWeight: 700, color: t.muted, display: 'flex', justifyContent: 'space-between' }}>
-          <span>난이도 바로가기</span><span>3</span>
+          <span>학년 바로가기</span><span>{LEVELS.length}</span>
         </div>
         <nav className="app-shell__levels" style={{ display: 'grid', gap: 6 }}>
           {LEVELS.map((lv) => (
-            <button key={lv.k} type="button" className="lift lift--sm lift--card" onClick={() => nav('/courses')}
+            <button key={lv.k} type="button" className="lift lift--sm lift--card" onClick={() => nav(`/courses?level=${lv.value}`)}
               style={{ fontFamily: t.font, display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 11, border: `1px solid ${t.line}`, background: '#fff', cursor: 'pointer', textAlign: 'left' }}>
               <span style={{ width: 26, height: 26, flex: '0 0 26px', display: 'grid', placeItems: 'center', borderRadius: 8, fontWeight: 800, fontSize: 13, color: t.coralStrong, background: t.coralSoft }}>{lv.k}</span>
               <span style={{ display: 'grid' }}>
