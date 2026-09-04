@@ -149,13 +149,16 @@ select {
   background: rgba(255, 255, 255, 0.72);
 }
 
-/* 홈 히어로 뒤에 깔리는 그라데이션. 콘텐츠 폭 밖으로 번지되 가로 스크롤은
-   만들지 않는다(예전엔 body { overflow-x:hidden } 으로 덮고 있었다). */
+/* 홈 히어로 뒤에 깔리는 그라데이션.
+   Page 컨테이너는 min(1200px, ...) 로 좁혀지므로, 그라데이션만 메인 영역(사이드바
+   오른쪽 끝 ~ 화면 오른쪽) 전체 폭으로 되돌린다. 좌우로 빼야 할 값은
+   (메인 폭 - 컨테이너 폭) / 2 = (100vw - 사이드바 - 100%) / 2.
+   100vw 는 세로 스크롤바 폭을 포함해 몇 px 더 번지지만,
+   .app-shell__main 의 overflow-x: clip 이 사이드바 경계에서 정확히 잘라 준다. */
 .home-hero__gradient {
-  left: -24px;
-  right: -24px;
+  left: calc((100vw - var(--app-sidebar-width) - 100%) / -2);
+  right: calc((100vw - var(--app-sidebar-width) - 100%) / -2);
   pointer-events: none;
-  border-radius: var(--r-lg);
 }
 
 /* ── 페이지 그리드 반응형 ───────────────────────────────────────────────────
