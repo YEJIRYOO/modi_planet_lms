@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useNavigate, Navigate } from 'react-router-dom';
 import { t } from '../styles/tokens';
 import { getRole, clearRole } from '../lib/session';
-import { Icon, BrandMark, type IconName } from './icons';
+import { Icon, type IconName } from './icons';
+import { BrandLogo } from './BrandLogo';
 import { LEVELS } from '../data/levels';
 
 // 레일 없이 로그인만 요구 (학습화면처럼 풀스크린 페이지용)
@@ -30,9 +31,9 @@ export function AppShell() {
   return (
     <div className="app-shell" style={{ fontFamily: t.font, color: t.ink, background: t.soft, minHeight: '100dvh' }}>
       <aside className="app-shell__sidebar" style={{ position: 'fixed', inset: '0 auto 0 0', display: 'flex', flexDirection: 'column', padding: '20px 16px 16px', background: t.soft, borderRight: `1px solid ${t.line}`, zIndex: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 4px 18px' }}>
-          <BrandMark size={26} />
-          <span className="app-shell__brand" style={{ fontWeight: 800, fontSize: 19, letterSpacing: '-.03em', color: t.ink }}>MODI Planet</span>
+        {/* 공식 워드마크에 "MODI Planet" 글자가 이미 들어 있어 텍스트를 따로 두지 않는다 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 4px 20px' }}>
+          <BrandLogo className="app-shell__logo" width={142} />
           <span className="app-shell__version" style={{ fontSize: 11, fontWeight: 800, color: t.coralStrong, background: t.coralSoft, padding: '2px 7px', borderRadius: 999 }}>3.0</span>
         </div>
         <div style={{ display: 'grid', gap: 4 }}>

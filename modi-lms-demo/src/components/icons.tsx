@@ -140,23 +140,3 @@ export function Icon({ name, size = 20, ...rest }: Props) {
   );
 }
 
-/* 사이드바·로그인에 쓰는 브랜드 마크. favicon.svg 와 같은 4-모듈 글리프. */
-export function BrandMark({ size = 26 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" focusable="false" style={{ flex: `0 0 ${size}px`, display: 'block' }}>
-      <defs>
-        <linearGradient id="modi-mark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ff5e5f" />
-          <stop offset="1" stopColor="#db2d2f" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="16" fill="url(#modi-mark)" />
-      <g fill="#fff">
-        <rect x="14" y="14" width="16" height="16" rx="5" />
-        <rect x="34" y="14" width="16" height="16" rx="5" opacity=".62" />
-        <rect x="14" y="34" width="16" height="16" rx="5" opacity=".62" />
-        <rect x="34" y="34" width="16" height="16" rx="5" />
-      </g>
-    </svg>
-  );
-}

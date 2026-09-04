@@ -37,23 +37,36 @@ export default function HomePage() {
             <Btn variant="ghost" onClick={() => nav('/mypage')}>나의 학습</Btn>
           </div>
         </div>
-        <div style={{ position: 'relative', zIndex: 1, display: 'grid', gap: 10 }}>
+        {/* 대표 이미지 — modi_planet_3.0 레포의 공식 제품 컷 */}
+        <figure className="home-hero__figure">
+          <img src="/visuals/modi-ecosystem.jpg" width={1600} height={1067}
+            alt="MODI 마스터 키트와 모듈, 조립한 로봇, 태블릿과 스마트폰에서 실행 중인 MODI 앱" />
+        </figure>
+      </section>
+
+      <section style={{ marginBottom: 44 }}>
+        <Kicker>난이도 바로가기</Kicker>
+        <div className="grid-levels">
           {LEVELS.map((lv) => (
             <button key={lv.k} type="button" className="lift lift--card" onClick={() => nav('/courses')}
-              style={{ fontFamily: t.font, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', background: t.surface, border: `1px solid ${t.line}`, borderRadius: t.rMd, boxShadow: t.shSm, textAlign: 'left' }}>
-              <span style={{ width: 44, height: 44, flex: '0 0 44px', display: 'grid', placeItems: 'center', borderRadius: 12, fontWeight: 800, fontSize: 17, color: t.coralStrong, background: t.coralSoft }}>{lv.k}</span>
-              <span style={{ display: 'grid' }}>
-                <strong style={{ fontSize: 16, color: t.ink }}>{lv.name}</strong>
-                <span style={{ fontSize: 13, color: t.muted }}>{lv.sub}</span>
+              style={{ fontFamily: t.font, cursor: 'pointer', display: 'block', width: '100%', padding: 0, overflow: 'hidden', textAlign: 'left', background: t.surface, border: `1px solid ${t.line}`, borderRadius: t.rMd, boxShadow: t.shSm }}>
+              <img src={lv.thumb} alt="" width={300} height={198}
+                style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '300 / 198', objectFit: 'cover' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                <span style={{ width: 34, height: 34, flex: '0 0 34px', display: 'grid', placeItems: 'center', borderRadius: 10, fontWeight: 800, fontSize: 15, color: t.coralStrong, background: t.coralSoft }}>{lv.k}</span>
+                <span style={{ display: 'grid' }}>
+                  <strong style={{ fontSize: 15, color: t.ink }}>{lv.name}</strong>
+                  <span style={{ fontSize: 12, color: t.muted }}>{lv.sub}</span>
+                </span>
+                <span style={{ marginLeft: 'auto', color: t.muted, display: 'flex' }}><Icon name="chevronRight" size={17} /></span>
               </span>
-              <span style={{ marginLeft: 'auto', color: t.muted, display: 'flex' }}><Icon name="chevronRight" size={18} /></span>
             </button>
           ))}
         </div>
       </section>
 
       {resuming.length > 0 && (
-        <section style={{ marginTop: 8, marginBottom: 40 }}>
+        <section style={{ marginBottom: 44 }}>
           <Kicker>이어서 학습</Kicker>
           <div className="grid-cards">
             {resuming.map((c) => <CourseCard key={c.id} c={c} onClick={() => nav(`/learning/${c.id}`)} />)}
@@ -61,7 +74,7 @@ export default function HomePage() {
         </section>
       )}
 
-      <section style={{ marginTop: 40 }}>
+      <section>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
           <Kicker>지금 배워 볼 프로젝트</Kicker>
           <button type="button" onClick={() => nav('/courses')}

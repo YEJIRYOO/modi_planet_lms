@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { t } from '../styles/tokens';
 import { setRole, type Role } from '../lib/session';
-import { Icon, BrandMark, type IconName } from '../components/icons';
+import { Icon, type IconName } from '../components/icons';
+import { BrandLogo } from '../components/BrandLogo';
 
 // 데모용 역할 선택 게이트. 실제 인증 없음. 기존과 동일하게 'demo_role' 저장 후 진입.
 export default function LoginPage() {
@@ -31,9 +32,9 @@ export default function LoginPage() {
   return (
     <div style={{ fontFamily: t.font, minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24, color: t.ink, background: `radial-gradient(1200px 600px at 50% -10%, ${t.coralPale}, ${t.soft})` }}>
       <div style={{ width: 'min(760px, 100%)', textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}><BrandMark size={44} /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}><BrandLogo width={210} /></div>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: t.surface, border: `1px solid ${t.coralSoft}`, borderRadius: 999, fontSize: 13, fontWeight: 700, color: t.coralStrong, marginBottom: 22 }}>
-          <span style={{ width: 7, height: 7, flex: '0 0 7px', borderRadius: '50%', background: t.coral }} /> MODI Planet 3.0 · 리부트
+          <span style={{ width: 7, height: 7, flex: '0 0 7px', borderRadius: '50%', background: t.coral }} /> 3.0 리부트 · 데모
         </div>
         <h1 style={{ margin: 0, fontSize: 'clamp(34px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-.04em', lineHeight: 1.12 }}>
           AI와 함께 만들며 배우는<br /><span style={{ color: t.coral }}>MODI 학습 여정</span>
