@@ -70,6 +70,7 @@ export default function GamePreviewTab({ cur }: { cur: HybridCurriculum }) {
             </p>
           )}
           <button type="button" onClick={() => void check()} style={btn}>다시 확인</button>
+          {cur.archiveUrl && <a href={cur.archiveUrl} download style={{ ...btn, display: 'inline-flex', marginLeft: 8, textDecoration: 'none', background: t.surface, color: t.inkSoft, boxShadow: `inset 0 0 0 1px ${t.lineStrong}` }}>프로젝트 ZIP</a>}
         </div>
       </Frame>
     );
@@ -86,6 +87,7 @@ export default function GamePreviewTab({ cur }: { cur: HybridCurriculum }) {
         </span>
         <span style={{ fontSize: 12, color: t.muted }}>127.0.0.1:{cur.port}</span>
         <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+          {cur.archiveUrl && <a href={cur.archiveUrl} download style={{ ...btnSm, textDecoration: 'none' }}>프로젝트 ZIP</a>}
           <button type="button" onClick={() => setNonce((n) => n + 1)} style={btnSm}>새로고침</button>
           <a href={gameUrl(cur.port)} target="_blank" rel="noreferrer" style={{ ...btnSm, textDecoration: 'none' }}>새 창</a>
         </span>

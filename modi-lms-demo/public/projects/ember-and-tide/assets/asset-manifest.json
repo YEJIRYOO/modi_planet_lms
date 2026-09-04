@@ -1,0 +1,34 @@
+{
+  "provider": "AetherForge AI",
+  "endpoint": "/public/v1/generate/image",
+  "model": "GPT Image 2",
+  "generated_at": "2026-08-16T21:13:59Z",
+  "assets": [
+    {
+      "slug": "frost-vault",
+      "file": "stage-frost-vault.png",
+      "job_id": "db1b0ef9-7dac-4d8b-a780-1c627ce60d6c",
+      "prompt": "Use case: stylized-concept. Asset type: 16:9 side-scrolling game environment background. A majestic ancient ice vault inside a glacial cavern, layered crystalline arches, frosted stone ruins, distant turquoise waterfalls, cold mist and tiny floating ice particles. Painterly premium indie game art, elegant shapes, luminous cyan rim light, deep navy shadows, cinematic depth with clear foreground, middle ground, and background parallax layers. Side-on orthographic platform-game camera. Keep the center and lower playable lane visually quiet and readable; environment geometry around the edges only. No characters, no platforms that look interactive, no UI, no text, no logo, no watermark. Exact widescreen composition."
+    },
+    {
+      "slug": "eclipse-library",
+      "file": "stage-eclipse-library.png",
+      "job_id": "4387490d-f876-450d-b86f-9cef982ed2c6",
+      "prompt": "Use case: stylized-concept. Asset type: 16:9 side-scrolling game environment background. An enormous subterranean eclipse library, violet stone arches and floating shelves fading into depth, a huge dark celestial disc behind a circular window, narrow lavender god rays, ancient mirror mechanisms and faint gold dust. Painterly premium indie game art, sophisticated purple and midnight palette, atmospheric depth, side-on orthographic platform-game camera. Keep the center and lower playable lane visually quiet and readable; set dressing stays in distant layers and edges. No characters, no UI, no readable text, no logo, no watermark. Exact widescreen composition."
+    },
+    {
+      "slug": "resonance-core",
+      "file": "stage-resonance-core.png",
+      "job_id": "c55e2cce-c9b6-4b44-901d-53e65d41358b",
+      "prompt": "Use case: stylized-concept. Asset type: 16:9 side-scrolling game environment background. A vast elemental resonance engine inside an ancient techno-mystic sanctuary, concentric suspended rings, water channels and warm ember conduits converging on a mint-white energy core, dark teal stone, oxidized metal, subtle coral and cyan energy veins, drifting luminous particles. Painterly premium indie game art, cinematic depth, side-on orthographic platform-game camera. Keep the center and lower playable lane visually quiet and readable, with machinery in the far background and edges. No characters, no UI, no text, no logo, no watermark. Exact widescreen composition."
+    },
+    {
+      "slug": "heroes-spritesheet",
+      "file": "heroes-spritesheet-source.png",
+      "postprocessed_file": "heroes-spritesheet.png",
+      "postprocess": "flat chroma-key removal with soft matte and despill",
+      "job_id": "7b261956-49e4-4165-9a46-fa7822f644f8",
+      "prompt": "Use case: stylized-concept. Asset type: production 4 columns by 2 rows game character sprite sheet. EXACTLY eight equal cells, four walk-cycle frames across each row. Top row: one small friendly living fire spirit named EMBER, coral-orange flame-shaped body, dark navy oval eyes, tiny arms and feet. Bottom row: one small friendly living water spirit named TIDE, cyan-blue teardrop-shaped body, dark navy oval eyes, tiny arms and feet. Strict side view facing right, same scale and registration in every cell, complete body with generous padding, readable silhouette, polished painterly 2D indie game style with crisp edges. Perfectly flat uniform pure #00ff00 chroma-key background across the entire canvas, no grid lines, no shadows, no gradients in background, no floor, no reflections. Never use green on the characters. No text, no labels, no logo, no watermark."
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import { Icon } from './icons';
 
 const ROLE_COLOR: Record<string, { bg: string; fg: string }> = {
   필수: { bg: t.coralSoft, fg: t.coralStrong },
+  택1: { bg: t.blueSoft, fg: t.blue },
   선택: { bg: t.soft, fg: t.muted },
 };
 
@@ -44,7 +45,20 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
     void modiWebSerial.reconnectGranted();
   }, []);
 
-  const missing = cur.modules.filter((m) => m.role === '필수' && !device.modules.some((found) => found.type === keyToType(m.key))).map((m) => moduleName(m.key));
+  const missingRequired = cur.modules
+    .filter((m) => m.role === '필수' && !device.modules.some((found) => found.type === keyToType(m.key)))
+    .map((m) => moduleName(m.key));
+  const choiceGroups = cur.modules
+    .filter((m) => m.role === '택1')
+    .reduce<Record<string, typeof cur.modules>>((groups, module) => {
+      const key = module.choiceGroup ?? module.key;
+      (groups[key] ??= []).push(module);
+      return groups;
+    }, {});
+  const missingChoices = Object.values(choiceGroups)
+    .filter((choices) => !choices.some((choice) => device.modules.some((found) => found.type === keyToType(choice.key))))
+    .map((choices) => choices.map((choice) => moduleName(choice.key)).join(' 또는 '));
+  const missing = [...missingRequired, ...missingChoices];
   const st = statusOf(device, missing);
   const tone = TONE[st.tone];
 

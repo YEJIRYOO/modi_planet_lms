@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { CourseType } from '../types';
+import type { CourseProject } from '../data/courses';
 import type { VibeResult } from '../lib/vibeClient';
 import { findHybridCurriculum } from '../data/hybridCurriculum';
 import ModitorTab from './ModitorTab';
@@ -12,6 +13,7 @@ import PreviewTab from './PreviewTab';
 import GamePreviewTab from './GamePreviewTab';
 import BrowserHardwarePreview from './BrowserHardwarePreview';
 import CodeViewTab from './CodeViewTab';
+import StaticProjectPreview from './StaticProjectPreview';
 import { t } from '../styles/tokens';
 import { EmptyState } from './ui';
 import { Icon, type IconName } from './icons';
@@ -38,10 +40,12 @@ interface LearningTabsProps {
   courseType: CourseType;
   /** HW_SW 정적 커리큘럼을 찾는 키. data/hybridCurriculum.ts 의 courseId 와 맞아야 한다. */
   courseId?: string;
+  courseTitle?: string;
   locale?: string;
+  project?: CourseProject;
 }
 
-export default function LearningTabs({ courseType, courseId, locale = 'ko' }: LearningTabsProps) {
+export default function LearningTabs({ courseType, courseId, courseTitle, locale = 'ko', project }: LearningTabsProps) {
   const tabs = useMemo(() => TABS_BY_TYPE[courseType], [courseType]);
   const [active, setActive] = useState<TabKey>(tabs[0]);
 
@@ -106,8 +110,16 @@ export default function LearningTabs({ courseType, courseId, locale = 'ko' }: Le
         {active === 'parts' && (cur ? <HybridPartsTab cur={cur} /> : <PartsTab result={result} />)}
 
         {active === 'preview' && (cur
-          ? (unlocked ? (courseId === '6' ? <BrowserHardwarePreview /> : <GamePreviewTab cur={cur} />) : locked('preview', '아직 미리볼 결과가 없어요'))
-          : <PreviewTab result={result} courseType={courseType} />)}
+          ? (unlocked
+              ? (courseId === '6'
+                  ? <BrowserHardwarePreview />
+                  : project?.previewUrl
+                    ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} />
+                    : <GamePreviewTab cur={cur} />)
+              : locked('preview', '아직 미리볼 결과가 없어요'))
+          : project?.previewUrl
+            ? <StaticProjectPreview title={courseTitle ?? '프로젝트'} previewUrl={project.previewUrl} downloadUrl={project.downloadUrl} note={project.previewNote} />
+            : <PreviewTab result={result} courseType={courseType} />)}
 
         {active === 'note' && (cur
           ? (unlocked ? <LearningNotesTab result={{ learning_notes: cur.notes }} /> : locked('note', '아직 학습 노트가 없어요'))

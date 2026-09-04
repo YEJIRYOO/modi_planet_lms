@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07131f" />
+    <meta
+      name="description"
+      content="MODI PLUS의 IMU, 조이스틱, ENV, 버튼, LED, SPEAKER로 플레이하는 물과 불 퍼즐 어드벤처"
+    />
+    <title>EMBER &amp; TIDE — MODI PLUS 어드벤처</title>
+    <script type="module" crossorigin src="/projects/ember-and-tide/assets/index-DI850sDk.js"></script>
+    <link rel="stylesheet" crossorigin href="/projects/ember-and-tide/assets/index-BT4pwy4_.css">
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game-canvas" width="1440" height="810" aria-label="EMBER & TIDE 게임 화면"></canvas>
+
+      <section id="start-screen" class="screen screen--visible" aria-labelledby="game-title">
+        <div class="hero-mark" aria-hidden="true"><span>●</span><i></i><span>●</span></div>
+        <p class="eyebrow">A MODI PLUS ADVENTURE</p>
+        <h1 id="game-title">EMBER <em>&amp;</em> TIDE</h1>
+        <p class="lede">기울이고, 가리고, 데워서<br />두 원소의 길을 여세요.</p>
+        <div class="start-actions">
+          <button id="start-button" class="primary-button" type="button">탐험 시작</button>
+          <button id="open-guide-button" class="text-button" type="button">조작법 보기 <span>↗</span></button>
+        </div>
+        <p id="start-connection" class="connection-copy"><span></span> 하드웨어를 찾는 중…</p>
+      </section>
+
+      <section id="stage-intro" class="stage-intro" aria-live="polite">
+        <p id="stage-kicker">STAGE 01</p>
+        <h2 id="stage-title">빙결 금고</h2>
+        <p id="stage-subtitle">손끝의 온기로 오래된 길을 깨우세요.</p>
+      </section>
+
+      <header id="top-hud" class="top-hud" aria-label="게임 상태">
+        <div class="brand-lockup"><span class="brand-fire">●</span><b>E&amp;T</b><span class="brand-water">●</span></div>
+        <div class="stage-meta">
+          <span id="hud-stage">STAGE 01</span>
+          <strong id="hud-title">빙결 금고</strong>
+        </div>
+        <div class="progress-rail" aria-label="스테이지 진행률"><i id="progress-fill"></i></div>
+        <button id="pause-button" class="icon-button" type="button" aria-label="일시 정지">Ⅱ</button>
+      </header>
+
+      <aside id="mission-card" class="mission-card" aria-live="polite">
+        <span id="mission-index">01</span>
+        <div><p>현재 목표</p><strong id="mission-text">빙벽 가까이 이동하세요</strong></div>
+        <i id="mission-check">✓</i>
+      </aside>
+
+      <aside id="module-dock" class="module-dock" aria-label="MODI PLUS 모듈 상태">
+        <div class="dock-heading">
+          <div><span id="dock-status-dot"></span><strong>MODI PLUS</strong></div>
+          <div class="dock-actions">
+            <button id="calibration-open" type="button">방향 맞추기</button>
+            <button id="simulator-toggle" type="button">시뮬레이터</button>
+          </div>
+        </div>
+        <div class="module-grid">
+          <article class="module-card" data-module="imu">
+            <span class="module-icon imu-icon"><i></i></span>
+            <div><small>IMU</small><strong id="imu-value">0.0°</strong></div>
+            <b class="module-led"></b>
+          </article>
+          <article class="module-card" data-module="joystick">
+            <span class="module-icon joystick-icon"><i></i></span>
+            <div><small>JOYSTICK</small><strong id="joystick-value">0 · 0</strong></div>
+            <b class="module-led"></b>
+          </article>
+          <article class="module-card" data-module="env">
+            <span class="module-icon env-icon">◒</span>
+            <div><small>ENV</small><strong id="env-value">24°C · 72%</strong></div>
+            <b class="module-led"></b>
+          </article>
+          <article class="module-card" data-module="button">
+            <span class="module-icon button-icon"><i></i></span>
+            <div><small>BUTTON</small><strong id="button-value">대기</strong></div>
+            <b class="module-led"></b>
+          </article>
+          <article class="module-card" data-module="led">
+            <span id="led-preview" class="module-icon led-icon">✦</span>
+            <div><small>LED</small><strong id="led-value">동기화</strong></div>
+            <b class="module-led"></b>
+          </article>
+          <article class="module-card" data-module="speaker">
+            <span class="module-icon speaker-icon">♪</span>
+            <div><small>SPEAKER</small><strong id="speaker-value">준비</strong></div>
+            <b class="module-led"></b>
+          </article>
+        </div>
+        <p id="hardware-hint">브리지를 실행하면 실물 모듈로 자동 전환됩니다.</p>
+      </aside>
+
+      <section id="simulator-panel" class="simulator-panel" aria-label="MODI PLUS 시뮬레이터">
+        <div class="sim-header">
+          <div><p>HARDWARE LAB</p><h2>MODI 시뮬레이터</h2></div>
+          <button id="simulator-close" class="icon-button" type="button" aria-label="닫기">×</button>
+        </div>
+        <p class="sim-copy">실물 모듈이 없어도 모든 기믹을 시험할 수 있습니다.</p>
+        <label class="sim-control">
+          <span><b>IMU 기울기</b><output id="sim-roll-output">0°</output></span>
+          <input id="sim-roll" type="range" min="-35" max="35" value="0" />
+        </label>
+        <div class="sim-control">
+          <span><b>조이스틱</b><output id="sim-joystick-output">중앙</output></span>
+          <div class="dpad">
+            <button type="button" data-joy="up">↑</button>
+            <button type="button" data-joy="left">←</button>
+            <button type="button" data-joy="origin">●</button>
+            <button type="button" data-joy="right">→</button>
+            <button type="button" data-joy="down">↓</button>
+          </div>
+        </div>
+        <div class="sim-env">
+          <button id="sim-heat" type="button"><span>♨</span><b>ENV 데우기</b><small>누르고 유지</small></button>
+          <button id="sim-dark" type="button"><span>◐</span><b>빛 가리기</b><small>누르고 유지</small></button>
+        </div>
+        <div class="sim-buttons">
+          <button id="sim-button" class="primary-button" type="button">BUTTON · 점프</button>
+          <button id="sim-switch" type="button">더블클릭 · 캐릭터 전환</button>
+        </div>
+        <div class="keyboard-map">
+          <p>키보드</p><span><kbd>A</kbd><kbd>D</kbd> 이동</span><span><kbd>SPACE</kbd> 점프</span><span><kbd>TAB</kbd> 전환</span><span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> 퍼즐</span><span><kbd>H</kbd> 열</span><span><kbd>L</kbd> 암전</span>
+        </div>
+      </section>
+
+      <section id="guide-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+        <div class="modal-card">
+          <button id="guide-close" class="icon-button modal-close" type="button" aria-label="닫기">×</button>
+          <p class="eyebrow">HOW TO PLAY</p>
+          <h2 id="guide-title">몸으로 푸는 원소 퍼즐</h2>
+          <div class="guide-list">
+            <article><span class="module-icon imu-icon"><i></i></span><div><b>기울여 이동</b><p>IMU를 좌우로 기울여 현재 캐릭터를 움직입니다.</p></div></article>
+            <article><span class="module-icon env-icon">◒</span><div><b>온도와 빛</b><p>ENV를 손으로 데우거나 센서를 가려 장애물을 해제합니다.</p></div></article>
+            <article><span class="module-icon joystick-icon"><i></i></span><div><b>룬을 맞추기</b><p>조이스틱 방향을 입력해 거울과 고대 장치를 풉니다.</p></div></article>
+            <article><span class="module-icon button-icon"><i></i></span><div><b>점프와 전환</b><p>한 번 누르면 점프, 더블클릭하면 불과 물을 전환합니다.</p></div></article>
+          </div>
+          <button id="guide-start-button" class="primary-button" type="button">준비 완료</button>
+        </div>
+      </section>
+
+      <section id="calibration-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="calibration-title">
+        <div class="modal-card calibration-card">
+          <div class="calibration-topline">
+            <p class="eyebrow">DIRECTION SYNC</p>
+            <span id="calibration-step">준비</span>
+          </div>
+          <h2 id="calibration-title">컨트롤러 방향을 맞춥니다</h2>
+          <p id="calibration-copy" class="calibration-copy">IMU와 조이스틱을 연결하면 자동으로 시작합니다.</p>
+
+          <div class="calibration-visual" aria-hidden="true">
+            <div id="calibration-imu" class="calibration-device calibration-device--imu">
+              <span>IMU</span><i></i><output id="calibration-imu-value">0.0°</output>
+            </div>
+            <div class="calibration-axis"><i></i><b>RIGHT</b></div>
+            <div id="calibration-joystick" class="calibration-device calibration-device--joystick">
+              <span>JOYSTICK</span><i></i><output id="calibration-joystick-value">0 · 0</output>
+            </div>
+          </div>
+
+          <ol class="calibration-progress" aria-label="동기화 진행 단계">
+            <li data-sync-step="neutral"><i></i><span>중앙</span></li>
+            <li data-sync-step="imu_right"><i></i><span>IMU</span></li>
+            <li data-sync-step="joystick_right"><i></i><span>조이스틱</span></li>
+          </ol>
+
+          <p id="calibration-status" class="calibration-status" role="status">모듈 연결을 확인하고 있습니다.</p>
+          <button id="calibration-action" class="primary-button" type="button" disabled>연결 대기</button>
+          <button id="calibration-cancel" class="text-button" type="button">나중에</button>
+        </div>
+      </section>
+
+      <section id="pause-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <div class="modal-card modal-card--small">
+          <p class="eyebrow">PAUSED</p><h2 id="pause-title">잠시 숨을 고르세요.</h2>
+          <button id="resume-button" class="primary-button" type="button">계속하기</button>
+          <button id="restart-button" class="text-button" type="button">스테이지 다시 시작</button>
+        </div>
+      </section>
+
+      <section id="victory-screen" class="screen" aria-labelledby="victory-title">
+        <div class="victory-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
+        <p class="eyebrow">ALL STAGES CLEAR</p>
+        <h2 id="victory-title">두 빛이<br />하나의 길이 되었습니다.</h2>
+        <p id="victory-stats">3개의 유적 · 0개의 재시작</p>
+        <button id="play-again-button" class="primary-button" type="button">다시 탐험</button>
+      </section>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </main>
+  </body>
+</html>

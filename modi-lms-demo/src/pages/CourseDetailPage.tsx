@@ -85,6 +85,12 @@ export default function CourseDetailPage() {
         <aside className="detail-aside" style={{ position: 'sticky', top: STICKY_TOP, background: t.surface, border: `1px solid ${t.line}`, borderRadius: t.rLg, boxShadow: t.shSm, padding: 24, display: 'grid', gap: 14 }}>
           <CourseThumb course={course} height={150} radius={t.rMd} />
           <div style={{ fontSize: 13, color: t.muted }}>완성물 · <strong style={{ color: t.inkSoft }}>{course.goal}</strong></div>
+          {course.project?.downloadUrl && (
+            <a href={course.project.downloadUrl} download
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', border: `1px solid ${t.lineStrong}`, borderRadius: t.rSm, background: t.surface, color: t.inkSoft, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
+              <Icon name="download" size={15} /> 독립 실행 프로젝트 ZIP
+            </a>
+          )}
           {teacher ? (
             <>
               <Btn full onClick={() => setDoc('plan')}>교안 보기</Btn>

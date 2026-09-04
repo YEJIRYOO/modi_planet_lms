@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { COURSES } from '../data/courses';
+import { COMPLETED_PROJECTS_DOWNLOAD_URL, COURSES } from '../data/courses';
 import type { CourseType } from '../types';
 import { t } from '../styles/tokens';
 import { Chip, Kicker, Page, EmptyState } from '../components/ui';
 import { CourseCard } from '../components/CourseCard';
+import { Icon } from '../components/icons';
 
 const FILTERS: { value: '전체' | CourseType; label: string }[] = [
   { value: '전체', label: '전체' },
@@ -30,8 +31,12 @@ export default function CourseListPage() {
         {FILTERS.map((f) => (
           <Chip key={f.value} active={type === f.value} onClick={() => setType(f.value)}>{f.label}</Chip>
         ))}
+        <a href={COMPLETED_PROJECTS_DOWNLOAD_URL} download
+          style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', border: `1px solid ${t.lineStrong}`, borderRadius: 9, background: t.surface, color: t.inkSoft, textDecoration: 'none', fontSize: 12, fontWeight: 700 }}>
+          <Icon name="download" size={14} /> 완성품 7종 전체 ZIP
+        </a>
         {/* 몇 개가 걸렸는지 바로 보이면 필터 결과가 적을 때도 "비어 보이지" 않는다 */}
-        <span style={{ marginLeft: 'auto', fontSize: 13, color: t.muted }}>{list.length}개 강좌</span>
+        <span style={{ fontSize: 13, color: t.muted }}>{list.length}개 강좌</span>
       </div>
 
       {list.length === 0 ? (

@@ -1,4 +1,4 @@
-const env = import.meta.env as any;
+const env = import.meta.env;
 
 // 모디 블록 에디터 (test-moditor는 존재하지 않아 dev-moditor로 교정)
 export const MODITOR_URL =

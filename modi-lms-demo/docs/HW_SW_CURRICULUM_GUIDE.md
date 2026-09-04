@@ -60,6 +60,7 @@ const NEW_HYBRID_COURSE: HybridCurriculum = {
   port: 0,
   folder: '',
   runCommand: '',
+  archiveUrl: '/projects/new-course-standalone.zip',
   modules: [
     {
       key: 'imu',
@@ -132,7 +133,8 @@ export const HYBRID_CURRICULA: HybridCurriculum[] = [
 |---|---|---|
 | `courseId` | 강좌와 커리큘럼 연결 키 | `courses.ts`의 `id`와 정확히 같아야 한다. |
 | `port`, `folder`, `runCommand` | 기존 로컬 서버 미리보기 정보 | 브라우저 미리보기에서는 현재 사용하지 않지만 인터페이스상 필수다. 신규 강좌에는 `0`, 빈 문자열을 임시로 사용한다. |
-| `modules` | 준비물 목록 및 필수 모듈 판정 | `필수`만 연결 완료 판정에 포함되고 `선택`은 없어도 진행할 수 있다. |
+| `archiveUrl` | 독립 실행 프로젝트 ZIP | 선택값. `public/projects/`에 둔 파일은 `/projects/...zip`으로 연결한다. |
+| `modules` | 준비물 목록 및 필수 모듈 판정 | `필수`는 모두 필요하고 `선택`은 없어도 된다. 같은 `choiceGroup`의 `택1` 모듈은 하나 이상 필요하다. |
 | `mockNote` | 연결 제약 안내 | 현재 서버 미리보기의 안내문으로도 사용된다. |
 | `examples` | 바이브 코딩 시작 예시 | 예시 하나에 세 키워드를 모두 넣으면 한 번에 잠금 해제가 가능하다. |
 | `keywords` | 프롬프트 매칭 규칙 | 현재 타입과 UI가 정확히 3개를 전제로 한다. |
@@ -200,7 +202,14 @@ public/modules/NewSensor.png
 2. MODI+ Network Module을 921600 baud로 연다.
 3. 모듈 ID/UUID 정보를 요청한다.
 4. UUID로 모듈 종류를 판별한다.
-5. 커리큘럼의 모든 `필수` 모듈이 발견됐는지 비교한다.
+5. 커리큘럼의 모든 `필수` 모듈과 각 `택1` 그룹에서 하나 이상의 모듈이 발견됐는지 비교한다.
+
+서로 대체 가능한 모듈은 같은 `choiceGroup`으로 등록한다.
+
+```ts
+{ key: 'dial', role: '택1', reason: '연속값으로 볼륨을 조절한다', count: 1, choiceGroup: 'volume-control' },
+{ key: 'joystick', role: '택1', reason: '위아래로 볼륨을 조절한다', count: 1, choiceGroup: 'volume-control' },
+```
 
 모듈 키 변환의 예외도 확인해야 한다.
 

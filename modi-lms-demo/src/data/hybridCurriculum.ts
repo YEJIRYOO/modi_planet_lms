@@ -18,9 +18,10 @@ export interface HybridKeyword {
 
 export interface HybridModule {
   key: string;      // lib/modules.ts 의 키
-  role: '필수' | '선택';
+  role: '필수' | '선택' | '택1';
   reason: string;
   count: number;
+  choiceGroup?: string;
 }
 
 export interface HybridCurriculum {
@@ -31,6 +32,7 @@ export interface HybridCurriculum {
   runCommand: string;
   /** 게임 폴더 이름(실행 안내용) */
   folder: string;
+  archiveUrl?: string;
   modules: HybridModule[];
   /** 실기기 없이 볼 때의 제약 안내 */
   mockNote: string;
@@ -50,7 +52,8 @@ export interface HybridCurriculum {
 const F1942: HybridCurriculum = {
   courseId: '3',
   port: 8101,
-  folder: '1942',
+  folder: '1942-standalone',
+  archiveUrl: '/projects/1942-standalone.zip',
   runCommand: 'python app.py --mode real --port 8101',
   modules: [
     { key: 'imu', role: '필수', reason: '기체를 기울여 비행기를 좌우로 움직인다', count: 1 },
@@ -288,7 +291,8 @@ function apply(data) {
 const TILT_MATCH: HybridCurriculum = {
   courseId: '4',
   port: 8102,
-  folder: 'tilt_match',
+  folder: 'tilt-match-standalone',
+  archiveUrl: '/projects/tilt-match-standalone.zip',
   runCommand: 'python app.py --mode real --port 8102',
   modules: [
     { key: 'imu', role: '필수', reason: '좌우로 기울여 방향을 고른다', count: 1 },
@@ -423,13 +427,14 @@ function paint(data) {
 const LOOP_STUDIO: HybridCurriculum = {
   courseId: '5',
   port: 8103,
-  folder: 'loop_studio',
+  folder: 'music-studio-standalone',
+  archiveUrl: '/projects/music-studio-standalone.zip',
   runCommand: 'python app.py --mode real --port 8103',
   modules: [
-    { key: 'dial', role: '필수', reason: '돌린 각도가 그대로 볼륨이 된다', count: 1 },
+    { key: 'dial', role: '택1', reason: '연결하면 돌린 각도 0~100이 그대로 볼륨이 된다', count: 1, choiceGroup: 'volume-control' },
     { key: 'button', role: '필수', reason: '누르면 재생과 정지를 번갈아 한다', count: 1 },
     { key: 'speaker', role: '필수', reason: '만든 패턴을 실제 소리로 낸다', count: 1 },
-    { key: 'joystick', role: '선택', reason: '다이얼이 없을 때 위/아래로 볼륨을 조절한다', count: 1 },
+    { key: 'joystick', role: '택1', reason: '다이얼 대신 위/아래 입력으로 볼륨을 5씩 조절한다', count: 1, choiceGroup: 'volume-control' },
   ],
   mockNote: '다이얼(또는 조이스틱) · 버튼 · 스피커가 모두 있어야 real 모드입니다. mock 모드에서는 컴퓨터 스피커로 소리가 납니다.',
   examples: [
@@ -548,7 +553,396 @@ def note(self, value, duration=.28, volume_override=None):
   ],
 };
 
-export const HYBRID_CURRICULA: HybridCurriculum[] = [F1942, TILT_MATCH, LOOP_STUDIO, TILT_CLICK_TEST];
+const FUNCTION_SHAPE: HybridCurriculum = {
+  courseId: '7',
+  port: 8501,
+  folder: 'function-shape-standalone',
+  archiveUrl: '/projects/function-shape-standalone.zip',
+  runCommand: 'python app.py --mode real --port 8501',
+  modules: [
+    { key: 'dial', role: '필수', reason: '선택한 함수 계수를 허용 범위 안에서 연속적으로 조절한다', count: 1 },
+    { key: 'joystick', role: '필수', reason: '좌우로 계수를 선택하고 위아래로 0.1씩 미세 조정한다', count: 1 },
+    { key: 'button', role: '필수', reason: '현재 그래프를 제출해 목표 그래프와의 정확도를 계산한다', count: 1 },
+    { key: 'led', role: '선택', reason: '대기 중에는 파랑, 성공은 초록, 재도전은 주황으로 결과를 알려 준다', count: 1 },
+  ],
+  mockNote: '실기기 모드에는 다이얼·조이스틱·버튼이 모두 필요합니다. LED는 없어도 학습할 수 있으며, mock 모드에서는 화면 컨트롤로 모든 조작을 시험할 수 있습니다.',
+  examples: [
+    '다이얼로 함수 계수를 바꾸고 조이스틱으로 항을 선택해서 버튼으로 그래프를 제출하고 싶어',
+    '일차함수와 절댓값함수, 이차함수의 개형을 목표 그래프와 90% 이상 같게 맞추는 게임',
+  ],
+  keywords: [
+    {
+      label: '함수 계수',
+      synonyms: ['함수', '계수', '기울기', '절편', '일차함수', '절댓값', '이차함수', '그래프', 'a', 'h', 'k'],
+      reply: '**함수 계수**를 움직이며 그래프의 변화를 관찰합니다.\n\n일차함수 `y=ax+b`, 절댓값함수 `y=a|x-h|+k`, 이차함수 `y=a(x-h)²+k`가 차례로 출제됩니다. `a`는 방향과 폭, `h`와 `k`는 좌우·상하 위치를 바꿉니다.',
+      hint: '어떤 함수의 어떤 숫자를 바꾸어 그래프 모양을 맞출지 설명해 보세요.',
+    },
+    {
+      label: '모듈 조작',
+      synonyms: ['다이얼', 'dial', '조이스틱', 'joystick', '좌우', '위아래', '선택', '미세', '조절'],
+      reply: '**모듈 조작**은 역할을 나눕니다.\n\n다이얼은 선택된 계수의 전체 범위를 빠르게 이동합니다. 조이스틱 좌우는 조절할 계수를 고르고, 위아래는 0.1 단위로 미세 조정합니다. 길게 누르면 일정 간격으로 반복되어 큰 변화와 정밀 조정을 모두 할 수 있습니다.',
+      hint: '계수를 고르는 입력과 값을 바꾸는 입력을 각각 어떤 모듈에 맡길까요?',
+    },
+    {
+      label: '정확도 판정',
+      synonyms: ['정확도', '판정', '제출', '버튼', 'button', '오차', '90', '점수', '통과', '채점'],
+      reply: '**정확도 판정**은 화면의 한 점만 비교하지 않습니다.\n\n`x=-5`부터 `x=5`까지 81개 지점에서 목표 함수와 현재 함수의 차이를 구하고 평균 오차를 점수로 바꿉니다. 버튼으로 제출했을 때 정확도 90% 이상이면 통과합니다.',
+      hint: '완성한 그래프를 어떻게 제출하고 어떤 기준으로 성공시킬지 말해 보세요.',
+    },
+  ],
+  unlockReply: '**함수 계수 · 모듈 조작 · 정확도 판정**이 모두 정해졌습니다.\n\n코드 보기에서 계수와 그래프의 관계를 확인하고, 프로젝트 ZIP을 실행해 목표 개형을 90% 이상으로 맞춰 보세요.',
+  codeFiles: {
+    'app.py — 함수와 정확도': `def value(family, params, x):
+    if family == 'linear':
+        return params['a'] * x + params['b']
+    if family == 'absolute':
+        return params['a'] * abs(x - params['h']) + params['k']
+    return params['a'] * (x - params['h']) ** 2 + params['k']
+
+def grade(self):
+    errors = []
+    for index in range(81):
+        x = -5 + index / 8
+        target = self.value(self.family, self.target, x)
+        current = self.value(self.family, self.params, x)
+        errors.append(min(16, abs(target - current)))
+    mean_error = sum(errors) / len(errors)
+    return max(0, min(100, round(100 * (1 - mean_error / 8))))
+`,
+    'app.py — 다이얼·조이스틱·버튼': `pressed = bool(self.bundle.buttons[0].pressed)
+submitted = pressed and not self.last_button
+self.last_button = pressed
+
+if action == 'left':
+    self.selected = (self.selected - 1) % len(names)
+elif action == 'right':
+    self.selected = (self.selected + 1) % len(names)
+elif action in ('up', 'down'):
+    amount = .1 if action == 'up' else -.1
+    self.nudges[selected_name] = round(self.nudges[selected_name] + amount, 1)
+
+dial = max(0, min(100, float(self.bundle.dials[0].turn)))
+self.params[selected_name] = round(
+    max(low, min(high, low + dial / 100 * (high - low) + self.nudges[selected_name])), 1
+)
+`,
+    '점검표.md': `1. 다이얼·조이스틱·버튼이 필수 모듈로 표시된다.
+2. 조이스틱 좌우로 선택 계수가 바뀐다.
+3. 조이스틱 위아래로 선택 계수가 0.1씩 변한다.
+4. 다이얼을 돌리면 선택 계수가 허용 범위 안에서 연속적으로 변한다.
+5. 버튼을 한 번 눌렀을 때 한 번만 채점된다.
+6. 정확도 90% 이상에서 다음 함수로 넘어간다.
+7. LED가 있다면 결과에 맞는 색으로 바뀐다.
+`,
+  },
+  notes: [
+    { title: '계수와 그래프 변환', what: '`a`, `b`, `h`, `k`를 직접 바꾸며 방향·폭·위치의 변화를 관찰한다.', why: '공식 암기보다 숫자 변화와 그래프 이동을 연결해 이해할 수 있다.', where: 'app.py의 FAMILIES와 value()' },
+    { title: '연속값과 방향 입력의 분업', what: '다이얼은 큰 범위를 연속 조절하고 조이스틱은 선택과 미세 조정을 맡는다.', why: '서로 다른 입력 장치의 장점을 결합하면 빠르면서도 정확하게 값을 맞출 수 있다.', where: 'app.py의 dial 변환과 joystick action 처리' },
+    { title: '구간 전체로 채점하기', what: '81개 x좌표에서 두 그래프의 평균 오차를 측정한다.', why: '한두 점만 우연히 겹치는 그래프를 정답으로 처리하지 않기 위해서다.', where: 'app.py의 grade()' },
+    { title: '길게 누르기 반복', what: '조이스틱을 0.35초 이상 유지하면 방향에 따라 정해진 간격으로 입력을 반복한다.', why: '매번 떼었다 누르지 않고도 여러 단계 이동하면서 지나치게 빠른 중복 입력을 막는다.', where: 'app.py의 direction_since와 last_repeat' },
+  ],
+};
+
+const TIMES_TABLE_QUEST: HybridCurriculum = {
+  courseId: '8',
+  port: 8502,
+  folder: 'times-table-quest-standalone',
+  archiveUrl: '/projects/times-table-quest-standalone.zip',
+  runCommand: 'python app.py --mode real --port 8502',
+  modules: [
+    { key: 'joystick', role: '필수', reason: '좌우로 답을 1씩, 위아래로 답을 10씩 조절한다', count: 1 },
+    { key: 'button', role: '필수', reason: '현재 답을 제출하고 정답 여부를 확인한다', count: 1 },
+    { key: 'dial', role: '선택', reason: '연결하면 답을 0~100 범위에서 빠르게 이동한다', count: 1 },
+    { key: 'led', role: '선택', reason: '대기·정답·오답 상태를 파랑·초록·빨강으로 보여 준다', count: 1 },
+    { key: 'speaker', role: '선택', reason: '정답은 1046Hz, 오답은 698Hz 소리로 알려 준다', count: 1 },
+  ],
+  mockNote: '실기기 모드에는 조이스틱과 버튼이 필요합니다. 다이얼·LED·스피커는 선택 모듈이며 없어도 10문제를 모두 풀 수 있습니다.',
+  examples: [
+    '조이스틱으로 구구단 답을 맞추고 버튼으로 제출하는 10문제 게임을 만들고 싶어',
+    '난이도를 고르고 연속 정답 보너스와 LED, 스피커 피드백을 받는 곱셈 퀴즈',
+  ],
+  keywords: [
+    {
+      label: '답 입력',
+      synonyms: ['답', '정답', '숫자', '조이스틱', 'joystick', '좌우', '위아래', '다이얼', 'dial', '입력'],
+      reply: '**답 입력**의 기본 장치는 조이스틱입니다.\n\n좌우는 ±1, 위아래는 ±10으로 움직여 0부터 144까지 모든 답을 만들 수 있습니다. 선택 다이얼이 있으면 0~100 범위를 빠르게 이동하고 조이스틱으로 나머지를 미세 조정합니다.',
+      hint: '곱셈의 답을 어떤 모듈로 몇 단위씩 바꿀지 설명해 보세요.',
+    },
+    {
+      label: '제출과 피드백',
+      synonyms: ['제출', '버튼', 'button', '채점', '피드백', 'led', '스피커', '소리', '색', '정답', '오답'],
+      reply: '**제출과 피드백**은 버튼의 상태 변화로 처리합니다.\n\n버튼을 누르는 순간 한 번만 채점합니다. LED가 있으면 정답은 초록, 오답은 빨강으로 바뀌고, 스피커가 있으면 각각 1046Hz와 698Hz로 서로 다른 소리를 냅니다.',
+      hint: '만든 답을 어떻게 제출하고 정답과 오답을 어떻게 알려 줄까요?',
+    },
+    {
+      label: '난이도와 점수',
+      synonyms: ['난이도', '입문', '표준', '도전', '2단', '9단', '12단', '점수', '연속', '보너스', '10문제'],
+      reply: '**난이도와 점수**를 학습 수준에 맞춥니다.\n\n입문은 2~5단, 표준은 2~9단, 도전은 6~12단입니다. 한 게임은 10문제이고 정답은 기본 100점에 연속 정답 보너스를 더하며, 오답은 10점을 차감하고 연속 기록을 초기화합니다.',
+      hint: '몇 단을 몇 문제 풀고 연속 정답을 점수에 어떻게 반영할까요?',
+    },
+  ],
+  unlockReply: '**답 입력 · 제출과 피드백 · 난이도와 점수**가 모두 정해졌습니다.\n\n프로젝트를 실행해 조이스틱과 버튼만으로 10문제를 풀고, 선택 모듈을 연결했을 때 피드백이 추가되는지도 확인해 보세요.',
+  codeFiles: {
+    'app.py — 조이스틱 답 입력': `if direction == 'origin':
+    self.direction_since = 0
+elif direction != self.last_direction:
+    action = direction
+    self.direction_since = now
+    self.last_repeat = now
+else:
+    interval = .10 if direction in ('left', 'right') else .18
+    if now - self.direction_since >= .35 and now - self.last_repeat >= interval:
+        action = direction
+        self.last_repeat = now
+
+delta = {'left': -1, 'right': 1, 'up': 10, 'down': -10}.get(action, 0)
+self.offset += delta
+self.answer = max(0, min(144, base + self.offset))
+`,
+    'app.py — 채점과 선택 출력': `submitted = button and not self.last_button
+self.last_button = button
+
+if submitted:
+    expected = self.left * self.right
+    if self.answer == expected:
+        self.correct += 1
+        self.streak += 1
+        self.score += 100 + min(100, self.streak * 10)
+        if self.bundle.leds:
+            self.bundle.leds[0].set_rgb(65, 255, 100)
+        self.tone(1046)
+    else:
+        self.streak = 0
+        self.score = max(0, self.score - 10)
+        if self.bundle.leds:
+            self.bundle.leds[0].set_rgb(255, 60, 35)
+        self.tone(698)
+`,
+    '점검표.md': `1. 조이스틱과 버튼만 연결해도 real 모드로 시작된다.
+2. 좌우 입력은 답을 1씩, 위아래 입력은 10씩 바꾼다.
+3. 버튼을 길게 눌러도 한 번만 제출된다.
+4. 입문·표준·도전 난이도의 출제 범위가 다르다.
+5. 10문제 뒤 최종 점수와 정답 수가 표시된다.
+6. 다이얼·LED·스피커가 없어도 게임을 끝낼 수 있다.
+7. 선택 모듈을 연결하면 각 모듈의 추가 기능이 동작한다.
+`,
+  },
+  notes: [
+    { title: '자리값을 이용한 입력', what: '좌우는 1의 자리, 위아래는 10의 자리처럼 답을 바꾼다.', why: '버튼 수가 적은 조이스틱으로도 0~144 범위를 빠르게 탐색할 수 있다.', where: 'app.py의 delta 매핑' },
+    { title: '필수 기능과 선택 피드백', what: '조이스틱과 버튼만으로 게임을 완주하고 다른 모듈은 피드백을 풍부하게 한다.', why: '선택 모듈이 없다고 핵심 학습 활동이 막히지 않게 하기 위해서다.', where: 'app.py의 has_dial, leds, speakers 분기' },
+    { title: '버튼 엣지 검출', what: '이전 버튼 상태와 비교해 눌리는 순간에만 제출한다.', why: '100ms마다 상태를 읽어도 한 번 누른 답이 여러 번 채점되지 않는다.', where: 'app.py의 last_button' },
+    { title: '수준별 출제 범위', what: '입문·표준·도전마다 곱하는 수의 범위를 달리한다.', why: '같은 조작법을 유지하면서 학습자의 숙련도에 맞춰 난이도를 조절할 수 있다.', where: 'app.py의 ranges' },
+  ],
+};
+
+const CLASSROOM_GARDEN: HybridCurriculum = {
+  courseId: '13',
+  port: 8701,
+  folder: 'classroom-garden-standalone',
+  archiveUrl: '/projects/classroom-garden-standalone.zip',
+  runCommand: 'python app.py --mode real --port 8701',
+  modules: [
+    { key: 'network', role: '필수', reason: 'USB로 컴퓨터와 교실의 MODI PLUS 모듈을 연결한다', count: 1 },
+    { key: 'env', role: '필수', reason: '교실의 온도·습도·밝기를 측정해 생장 환경을 계산한다', count: 1 },
+    { key: 'dial', role: '필수', reason: '한 번에 줄 물의 양을 5~27ml 범위로 정한다', count: 1 },
+    { key: 'button', role: '필수', reason: '누르는 순간 다이얼로 정한 양만큼 식물에 물을 준다', count: 1 },
+    { key: 'tof', role: '필수', reason: '12cm 안에 손이 들어오면 식물을 쓰다듬어 행복도를 높인다', count: 1 },
+    { key: 'led', role: '필수', reason: '건강·갈증·어두움·과습 등 식물 상태를 색으로 표시한다', count: 1 },
+  ],
+  mockNote: '실기기 모드에는 ENV·다이얼·버튼·ToF·LED가 모두 필요합니다. mock 모드에서는 화면 슬라이더와 버튼으로 교실 환경과 돌봄을 시험할 수 있습니다.',
+  examples: [
+    '교실 온도와 습도, 빛을 측정하고 다이얼과 버튼으로 물을 주며 식물을 키우고 싶어',
+    'ToF에 손을 가까이 대면 식물이 행복해지고 LED로 건강 상태를 알려 주는 정원',
+  ],
+  keywords: [
+    {
+      label: '교실 환경',
+      synonyms: ['교실', '환경', 'env', '온도', '습도', '밝기', '빛', '조도', '측정', '센서'],
+      reply: '**교실 환경**은 ENV 모듈이 측정합니다.\n\n식물이 잘 자라는 범위는 온도 20~26°C, 습도 40~70%, 밝기 40~82%입니다. 세 값이 적정 범위에 얼마나 가까운지 각각 계산한 뒤 평균을 내 환경 품질로 사용합니다.',
+      hint: '식물이 자라는 데 필요한 온도·습도·빛을 어떤 센서로 관찰할지 말해 보세요.',
+    },
+    {
+      label: '물주기와 돌봄',
+      synonyms: ['물', '물주기', '다이얼', 'dial', '버튼', 'button', 'tof', '거리', '손', '쓰다듬', '돌봄'],
+      reply: '**물주기와 돌봄**에는 세 모듈을 사용합니다.\n\n다이얼은 물의 양을 5~27ml로 정하고 버튼을 누르는 순간 물을 줍니다. ToF 센서 12cm 안으로 손을 가져오면 쓰다듬기로 인식해 행복도를 높이며, 손을 18cm 밖으로 뺐다가 다시 가까이 해야 다음 돌봄으로 계산됩니다.',
+      hint: '물의 양, 물 주는 순간, 식물 쓰다듬기를 각각 어떻게 입력할지 설명해 보세요.',
+    },
+    {
+      label: '균형과 성장',
+      synonyms: ['균형', '성장', '생장', '씨앗', '새싹', '잎', '봉오리', '꽃', '토양', '수분', '과습', '갈증', '행복', 'led'],
+      reply: '**균형과 성장**이 프로젝트의 핵심입니다.\n\n토양 수분은 35~78%가 적정하며 너무 마르거나 젖으면 성장과 행복도가 낮아집니다. 환경·토양·행복 조건이 함께 맞아야 씨앗→새싹→잎→봉오리→꽃의 5단계로 성장하고, LED가 현재 건강 상태를 색으로 알려 줍니다.',
+      hint: '한 가지 조건만 좋은 것이 아니라 어떤 값들이 균형을 이뤄야 꽃이 필지 말해 보세요.',
+    },
+  ],
+  unlockReply: '**교실 환경 · 물주기와 돌봄 · 균형과 성장**이 모두 정해졌습니다.\n\n코드에서 센서값을 적정 범위와 비교하는 방법을 확인하고, 미리보기에서 35분 수업 모드 또는 4분 체험 모드로 식물을 키워 보세요.',
+  codeFiles: {
+    'app.py — 환경 품질 계산': `def band(value, low, high, margin):
+    if low <= value <= high:
+        return 1.0
+    distance = low - value if value < low else value - high
+    return max(0.0, 1 - distance / margin)
+
+temp_quality = band(temperature, 20, 26, 10)
+humidity_quality = band(humidity, 40, 70, 30)
+light_quality = band(light, 40, 82, 35)
+environment_quality = (temp_quality + humidity_quality + light_quality) / 3
+`,
+    'app.py — 물주기와 쓰다듬기': `water_amount = round(5 + dial * .22, 1)
+pressed = button and not self.last_button
+self.last_button = button
+
+if pressed:
+    before = self.soil
+    self.soil = min(100, self.soil + water_amount)
+    self.waters += 1
+    if before > 78:
+        self.happiness = max(0, self.happiness - 7)
+
+near = distance < 12
+if near and not self.last_near:
+    self.pets += 1
+    self.happiness = min(100, self.happiness + 8)
+self.last_near = distance < 18
+`,
+    'app.py — 성장과 LED 상태': `soil_quality = band(self.soil, 35, 78, 28)
+care_quality = environment_quality * .7 + soil_quality * .3
+
+duration = 35 * 60 if self.pace == 'lesson' else 4 * 60
+rate = 100 / duration
+if environment_quality >= .55 and soil_quality >= .45 and self.happiness >= 35:
+    self.growth = min(100, self.growth + dt * rate * (.55 + care_quality * .65))
+
+rgb = (60, 255, 105) if status in ('happy', 'growing') else \
+      (40, 120, 255) if status == 'thirsty' else \
+      (255, 190, 35) if status in ('dark', 'cold', 'dry_air') else (255, 70, 35)
+self.bundle.leds[0].set_rgb(*rgb)
+`,
+    '점검표.md': `1. 네트워크·ENV·다이얼·버튼·ToF·LED가 준비물에 모두 표시된다.
+2. ENV의 온도·습도·밝기 값이 화면과 환경 품질에 반영된다.
+3. 다이얼 값에 따라 물의 양이 5~27ml로 달라진다.
+4. 버튼을 길게 눌러도 물주기는 한 번만 실행된다.
+5. ToF 12cm 안에서 쓰다듬기가 한 번 발생하고 18cm 밖에서 재무장된다.
+6. 과습·갈증·어두움·추위·더위·건조 상태에 맞게 LED가 변한다.
+7. 식물이 씨앗부터 꽃까지 5단계로 성장한다.
+8. 35분 수업 모드와 4분 체험 모드가 각각 동작한다.
+`,
+  },
+  notes: [
+    { title: '범위로 판단하는 센서값', what: '온도·습도·밝기를 하나의 정답값이 아니라 적정 구간과의 거리로 평가한다.', why: '실제 생장 환경은 정확한 한 값보다 허용 가능한 범위로 설명하는 것이 자연스럽다.', where: 'app.py의 band()' },
+    { title: '돌봄에도 과유불급', what: '물을 줄수록 무조건 좋아지는 대신 과습이면 행복도와 점수가 내려간다.', why: '여러 환경 조건의 균형을 관찰하게 하기 위해서다.', where: 'app.py의 pressed 물주기 분기' },
+    { title: '거리 입력의 히스테리시스', what: '12cm에서 입력하고 18cm 밖으로 나갔을 때 다음 입력을 준비한다.', why: '손이 경계에서 흔들릴 때 쓰다듬기가 여러 번 발생하는 것을 막는다.', where: 'app.py의 near와 last_near' },
+    { title: '수업 시간과 검증 시간', what: '같은 성장 규칙에 35분과 4분의 서로 다른 시간 배율을 제공한다.', why: '실제 수업과 짧은 기능 점검을 모두 지원하기 위해서다.', where: 'app.py의 pace와 duration' },
+  ],
+};
+
+const EMBER_AND_TIDE: HybridCurriculum = {
+  courseId: '12',
+  port: 5174,
+  folder: 'EMBER_AND_TIDE',
+  archiveUrl: '/projects/ember-and-tide-standalone.zip',
+  runCommand: './game_run main.py',
+  modules: [
+    { key: 'network', role: '필수', reason: 'USB로 컴퓨터와 MODI PLUS 모듈의 통신을 연결한다', count: 1 },
+    { key: 'imu', role: '필수', reason: '현재 캐릭터를 좌우로 이동하고 장착 방향을 보정한다', count: 1 },
+    { key: 'joystick', role: '필수', reason: '룬·거울·프리즘 퍼즐의 방향 순서를 입력한다', count: 1 },
+    { key: 'env', role: '필수', reason: '온도로 얼음을 녹이고 조도를 낮춰 빛의 문을 잠재운다', count: 1 },
+    { key: 'button', role: '필수', reason: '한 번 누르면 점프하고 더블클릭하면 EMBER와 TIDE를 전환한다', count: 1 },
+    { key: 'led', role: '필수', reason: '활성 원소·퍼즐 성공·위험 상태를 색으로 알려 준다', count: 1 },
+    { key: 'speaker', role: '필수', reason: '점프·정답·스테이지 완료를 효과음과 멜로디로 알려 준다', count: 1 },
+  ],
+  mockNote: '웹 미리보기는 키보드와 화면 시뮬레이터만으로 세 스테이지를 플레이할 수 있습니다. 실물 MODI를 사용하려면 ZIP을 풀고 통합 실행기를 실행해 로컬 WebSocket 브리지를 연결합니다.',
+  examples: [
+    'IMU로 물불 캐릭터를 움직이고 버튼으로 점프와 캐릭터 전환을 하는 퍼즐 게임',
+    '환경 센서를 데우거나 가리고 조이스틱 방향 순서를 맞춰 세 유적을 탈출하고 싶어',
+  ],
+  keywords: [
+    {
+      label: '두 캐릭터 조작',
+      synonyms: ['물불', '불', '물', 'ember', 'tide', '캐릭터', 'imu', '기울', '이동', '버튼', '점프', '전환', '더블클릭'],
+      reply: '**두 캐릭터 조작**은 IMU와 버튼이 담당합니다.\n\nIMU를 좌우로 기울이면 현재 캐릭터가 움직입니다. 버튼을 한 번 누르면 점프하고 더블클릭하면 불의 아이 EMBER와 물의 아이 TIDE가 바뀝니다. 각 캐릭터는 같은 원소의 액체만 안전하게 통과할 수 있습니다.',
+      hint: 'EMBER와 TIDE를 어떻게 이동하고 서로 전환할지 설명해 보세요.',
+    },
+    {
+      label: '센서 퍼즐',
+      synonyms: ['환경', 'env', '온도', '열', '데워', '조도', '빛', '가리', '조이스틱', '방향', '룬', '거울', '퍼즐'],
+      reply: '**센서 퍼즐**은 실제 환경 변화를 게임 규칙으로 사용합니다.\n\nENV 온도를 기준보다 3°C 높게 유지하면 얼음이 녹고, 조도를 18% 이하로 낮추면 빛의 문이 잠듭니다. 조이스틱은 스테이지별 방향 순서를 입력해 거울과 공명 룬을 활성화합니다.',
+      hint: '온도·빛·방향 입력으로 어떤 장애물을 해결할지 말해 보세요.',
+    },
+    {
+      label: '출력과 스테이지',
+      synonyms: ['led', '스피커', 'speaker', '색', '소리', '멜로디', '피드백', '스테이지', '빙결', '일식', '공명', '포털', '완료'],
+      reply: '**출력과 스테이지**가 진행 상황을 손으로 느끼게 합니다.\n\nLED는 활성 원소와 성공·위험 상태를 색으로 표시하고 스피커는 점프, 정답, 스테이지 완료음을 냅니다. 빙결 금고·일식 도서관·공명 코어를 차례로 해결해 두 캐릭터를 각자의 포털로 보내면 완료됩니다.',
+      hint: 'LED와 스피커가 무엇을 알려 주고 몇 개의 스테이지를 통과할지 설명해 보세요.',
+    },
+  ],
+  unlockReply: '**두 캐릭터 조작 · 센서 퍼즐 · 출력과 스테이지**가 모두 정해졌습니다.\n\n코드에서 센서값이 게임의 물리 규칙으로 바뀌는 과정을 확인하고, 미리보기의 시뮬레이터 또는 실물 MODI로 세 유적을 탐험해 보세요.',
+  codeFiles: {
+    'input.ts — 입력 대체 규칙': `const keyboardRoll = keys.has('KeyA') ? -28 : keys.has('KeyD') ? 28 : 0;
+state.imu.roll = keyboardRoll || simulationRoll;
+state.env.temperature = simulationHeat || keys.has('KeyH') ? 34 : 24;
+state.env.illuminance = simulationDark || keys.has('KeyL') ? 4 : 72;
+
+if (event.code === 'Space' || event.code === 'KeyW') jumpRequested = true;
+if (event.code === 'Tab') switchRequested = true;
+`,
+    'game.ts — 환경 센서 퍼즐': `primaryProgress = applyThresholdProgress(
+  primaryProgress,
+  nearIceWall && env.temperature >= 30,
+  deltaTime,
+  2.2,
+);
+
+primaryProgress = applyThresholdProgress(
+  primaryProgress,
+  nearLightGate && env.illuminance <= 18,
+  deltaTime,
+  1.7,
+);
+`,
+    'main.py — 모듈 텔레메트리': `MODULE_NAMES = ('imu', 'joystick', 'env', 'button', 'led', 'speaker')
+
+return {
+    'type': 'telemetry',
+    'source': 'hardware',
+    'modules': self.modules.status(),
+    'imu': {'roll': normalized_roll, 'pitch': normalized_pitch, 'yaw': raw_imu_z},
+    'joystick': {'x': normalized_x, 'y': normalized_y, 'direction': direction},
+    'env': self.read_env(),
+    'button': self.read_button(),
+}
+
+if action == 'led':
+    self.set_led(command.get('color'))
+if action == 'tone':
+    self.play_tone(command.get('frequency'), command.get('volume'), command.get('duration'))
+`,
+    '점검표.md': `1. 네트워크·IMU·조이스틱·ENV·버튼·LED·스피커가 준비물에 표시된다.
+2. 방향 동기화 후 IMU의 오른쪽 기울임이 화면 오른쪽 이동이 된다.
+3. 버튼 한 번은 점프, 더블클릭은 캐릭터 전환으로 구분된다.
+4. ENV를 데우거나 가렸을 때 온도·조도 퍼즐이 진행된다.
+5. 조이스틱 방향 순서를 맞히면 룬 또는 거울 퍼즐이 열린다.
+6. LED와 스피커가 원소·정답·위험·완료 상태에 반응한다.
+7. 실물 모듈 없이도 키보드와 화면 시뮬레이터로 완주할 수 있다.
+`,
+  },
+  notes: [
+    { title: '센서가 물리 법칙이 되는 게임', what: '온도와 조도를 단순 표시하지 않고 얼음과 빛의 문 상태에 직접 연결한다.', why: '센서값과 프로그램의 조건문 사이 관계를 플레이로 이해할 수 있다.', where: 'game.ts의 updateGimmicks()' },
+    { title: '방향 동기화', what: 'IMU와 조이스틱의 중앙값·실제 축·부호를 세 단계로 측정한다.', why: '모듈을 90° 또는 180° 회전해 장착해도 화면 방향을 일정하게 유지한다.', where: 'main.py의 DirectionCalibration' },
+    { title: '짧은 누름과 더블클릭', what: '같은 버튼으로 점프와 캐릭터 전환이라는 두 동작을 구분한다.', why: '제한된 하드웨어 입력으로 더 많은 게임 명령을 표현하기 위해서다.', where: 'main.py의 read_button()과 input.ts' },
+    { title: '하드웨어 대체 입력', what: '모든 센서 동작에 키보드와 화면 컨트롤을 함께 제공한다.', why: '실물 모듈 연결 문제로 게임 진행과 수업 검증이 막히지 않게 한다.', where: 'input.ts의 simulator 상태' },
+  ],
+};
+
+export const HYBRID_CURRICULA: HybridCurriculum[] = [
+  F1942,
+  TILT_MATCH,
+  LOOP_STUDIO,
+  TILT_CLICK_TEST,
+  FUNCTION_SHAPE,
+  TIMES_TABLE_QUEST,
+  CLASSROOM_GARDEN,
+  EMBER_AND_TIDE,
+];
 
 export const findHybridCurriculum = (courseId?: string) =>
   HYBRID_CURRICULA.find((c) => c.courseId === courseId);
