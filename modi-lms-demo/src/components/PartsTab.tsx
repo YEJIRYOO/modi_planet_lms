@@ -1,4 +1,5 @@
 import type { VibeResult, ModiLayoutItem } from '../lib/vibeClient';
+import type { ChecklistItem } from '../lib/coursePack';
 import { moduleName } from '../lib/modules';
 import { t } from '../styles/tokens';
 import { EmptyState } from './ui';
@@ -45,7 +46,59 @@ function AssemblyDiagram({ layout }: { layout: ModiLayoutItem[] }) {
 
 const sectionTitle = { fontSize: 13, fontWeight: 700, color: t.coralStrong, margin: '0 0 8px' } as const;
 
-export default function PartsTab({ result }: { result: VibeResult | null }) {
+interface ChecklistProps {
+  items: ChecklistItem[];
+  checked: string[];
+  onToggle: (id: string) => void;
+  satisfied: boolean;
+  allowSkip?: boolean;
+  skipLabel?: string;
+  onSkip?: () => void;
+}
+
+/* 실제 모듈 연결 여부로 막지 않는다. 교실에 모듈이 부족하거나 페어링이 안 되는
+   학생이 한 명만 있어도 수업 전체가 멈추기 때문이다. 필수는 확인 항목뿐이고,
+   나머지는 선택이며 언제든 건너뛸 수 있다. */
+function PrepChecklist({ items, checked, onToggle, satisfied, allowSkip, skipLabel, onSkip }: ChecklistProps) {
+  return (
+    <div style={{ border: `1px solid ${t.line}`, borderRadius: t.rMd, padding: 14, marginBottom: 20, background: t.coralPale }}>
+      <div style={{ ...sectionTitle, marginBottom: 10 }}>준비 확인</div>
+      <div style={{ display: 'grid', gap: 6 }}>
+        {items.map((item) => {
+          const on = checked.includes(item.id);
+          return (
+            <label
+              key={item.id}
+              style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: 14, color: on ? t.ink : t.inkSoft }}
+            >
+              <input type="checkbox" checked={on} onChange={() => onToggle(item.id)} style={{ accentColor: t.coral, width: 16, height: 16 }} />
+              <span>{item.label}</span>
+              {item.required && (
+                <span style={{ background: t.coralSoft, color: t.coralStrong, padding: '1px 7px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>필수</span>
+              )}
+            </label>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: satisfied ? t.green : t.muted }}>
+          {satisfied ? '다음 단계로 넘어갈 수 있어요.' : '필수 항목을 확인하면 바이브 코딩이 열립니다.'}
+        </span>
+        {allowSkip && !satisfied && onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${t.lineStrong}`, color: t.muted, borderRadius: t.rSm, padding: '6px 12px', cursor: 'pointer', fontFamily: t.font, fontSize: 13 }}
+          >
+            {skipLabel ?? '모듈 없이 진행하기'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function PartsTab({ result, checklist }: { result: VibeResult | null; checklist?: ChecklistProps }) {
   const modi = result?.modi_modules;
   if (!modi || modi.modules.length === 0) return <EmptyState icon="parts" title="아직 준비물 목록이 없어요" hint="바이브 코딩에서 만들 것을 설명하면 필요한 MODI 모듈이 여기에 정리됩니다." />;
 
@@ -81,11 +134,13 @@ export default function PartsTab({ result }: { result: VibeResult | null }) {
       {modi.assembly && modi.assembly.length > 0 && (
         <>
           <div style={sectionTitle}>조립 순서</div>
-          <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8, color: t.inkSoft }}>
+          <ol style={{ margin: '0 0 20px', paddingLeft: 20, lineHeight: 1.8, color: t.inkSoft }}>
             {modi.assembly.map((step, i) => <li key={i}>{step}</li>)}
           </ol>
         </>
       )}
+
+      {checklist && <PrepChecklist {...checklist} />}
     </div>
   );
 }

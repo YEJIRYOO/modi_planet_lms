@@ -12,7 +12,12 @@ import { Segmented, EmptyState } from './ui';
 import { Icon } from './icons';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
-interface Props { courseType?: CourseType; onResult?: (r: VibeResult) => void; }
+interface Props {
+  courseType?: CourseType;
+  onResult?: (r: VibeResult) => void;
+  /** 학생이 보낸 메시지 한 줄. 바이브 코딩 관문(키워드) 판정에 쓴다. */
+  onUserTurn?: (text: string) => void;
+}
 
 const CODE_TABS: { key: keyof CodeLangs; label: string; lang: string }[] = [
   { key: 'python', label: 'main.py', lang: 'python' },
@@ -79,7 +84,7 @@ function Hi({ code, lang }: { code: string; lang: string }) {
   );
 }
 
-export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
+export default function VibeCodingTab({ courseType = 'HW', onResult, onUserTurn }: Props) {
   const codingType: CodingType = courseType === 'SW' ? 'react' : courseType === 'HW_SW' ? 'hybrid' : 'blockly';
   const isReact = codingType === 'react';
   const isHybrid = codingType === 'hybrid';
@@ -114,6 +119,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
     setStatus('');
     resetBuf.current = false;
     setMessages((m) => [...m, { role: 'user', text: msg }, { role: 'assistant', text: '' }]);
+    onUserTurn?.(msg);
 
     const onEvent = (ev: VibeEvent) => {
       if (ev.type === 'status') { setStatus(ev.message ?? ''); return; }

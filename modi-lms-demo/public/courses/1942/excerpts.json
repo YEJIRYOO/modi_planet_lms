@@ -1,0 +1,30 @@
+[
+  {
+    "file": "modi1942.js",
+    "step": 1,
+    "title": "센서 규격 정하기",
+    "from": 14,
+    "to": 16
+  },
+  {
+    "file": "modi1942.js",
+    "step": 2,
+    "title": "기울기를 이동 방향으로 바꾸기",
+    "from": 30,
+    "to": 65
+  },
+  {
+    "file": "modi1942.js",
+    "step": 3,
+    "title": "잘못된 입력 막기",
+    "from": 69,
+    "to": 99
+  },
+  {
+    "file": "main.js",
+    "step": 4,
+    "title": "매 프레임 조작값 전달하기",
+    "from": 36,
+    "to": 59
+  }
+]

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>1942 · HW+SW 실습</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main>
+    <header class="stage-heading">
+      <div>
+        <p class="eyebrow">HW + SW</p>
+        <h1>1942 비행 조종</h1>
+        <p id="control-status" class="control-status" role="status">조작을 준비하는 중입니다…</p>
+      </div>
+    </header>
+
+    <div class="game-stage">
+      <canvas id="game1942" width="720" height="420" aria-label="1942 게임 화면" tabindex="0"></canvas>
+      <div id="calibration-overlay" class="calibration-overlay" role="dialog" aria-modal="true" hidden>
+        <div class="calibration-card">
+          <p class="eyebrow">IMU 보정</p>
+          <h2>오른쪽으로 기울여보세요!</h2>
+          <p id="calibration-state" role="status">중립 기준을 측정하고 있어요.</p>
+          <div class="calibration-progress" aria-hidden="true"><span id="calibration-progress"></span></div>
+          <button id="skip-calibration" type="button">건너뛰고 키보드로 시작</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="game-help">
+      IMU를 기울이거나 방향키·WASD로 이동하고, MODI 버튼·Space·아래 발사 버튼으로 공격합니다.
+    </p>
+
+    <div class="controls">
+      <label>기울기 pitch <input id="pitch" type="range" min="-90" max="90" value="0"></label>
+      <label>기울기 roll <input id="roll" type="range" min="-90" max="90" value="0"></label>
+      <button id="attack" type="button">발사</button>
+    </div>
+
+    <pre id="readout" class="readout" aria-live="off">·</pre>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+{
+  "id": "1942",
+  "title": "1942 비행 조종",
+  "codingType": "hybrid",
+  "description": "자이로를 기울여 비행기를 움직이고, 버튼을 눌러 공격하는 슈팅 게임입니다.",
+
+  "preview": {
+    "entry": "index.html",
+    "query": "?source=mock",
+    "note": "모듈이 없어도 슬라이더와 키보드로 바로 플레이할 수 있습니다."
+  },
+
+  "blocklyXmlFile": "blocks/1942.xml",
+
+  "preset": {
+    "modi_modules": {
+      "title": "1942 비행 조종",
+      "description": "자이로로 기울기를 읽고 버튼으로 발사합니다. 모터와 LED는 손맛을 더하는 선택 모듈입니다.",
+      "modules": [
+        { "key": "network", "role": "필수", "count": 1, "reason": "컴퓨터와 MODI를 연결합니다." },
+        { "key": "imu", "role": "입력", "count": 1, "reason": "기울인 각도를 읽어 비행기를 움직입니다." },
+        { "key": "button", "role": "입력", "count": 1, "reason": "누르면 미사일을 발사합니다." },
+        { "key": "motor_a", "role": "출력", "count": 1, "reason": "기울인 방향으로 돌아 조작감을 더합니다. 없어도 됩니다." },
+        { "key": "led", "role": "출력", "count": 1, "reason": "발사할 때 색이 바뀝니다. 없어도 됩니다." }
+      ],
+      "layout": [
+        { "key": "network", "pos": [0, 0] },
+        { "key": "imu", "pos": [1, 0] },
+        { "key": "button", "pos": [1, 1] },
+        { "key": "led", "pos": [0, 1] },
+        { "key": "motor_a", "pos": [2, 1] }
+      ],
+      "assembly": [
+        "네트워크 모듈을 컴퓨터에 연결합니다.",
+        "네트워크 오른쪽에 자이로를 붙입니다. 이 모듈을 손에 쥐고 기울이게 됩니다.",
+        "자이로 아래에 버튼을 붙입니다. 엄지로 누르기 좋은 위치가 좋습니다.",
+        "LED와 모터는 선택입니다. 없으면 화면만으로도 게임이 됩니다."
+      ]
+    },
+
+    "learning_notes": [
+      {
+        "title": "센서값은 그대로 쓰지 않습니다",
+        "what": "자이로가 준 각도를 -90 ~ 90으로 자르고, 90으로 나눠 -1 ~ 1로 바꿉니다.",
+        "why": "게임은 화면 크기를 모르는 편이 낫기 때문입니다. -1 ~ 1로 통일해두면 화면이 커져도 코드를 안 고칩니다.",
+        "where": "modi1942.js 의 map1942Controls"
+      },
+      {
+        "title": "데드존이 없으면 비행기가 흘러갑니다",
+        "what": "±3도 안쪽의 기울기는 0으로 처리합니다.",
+        "why": "손으로 들고 있으면 자이로는 완전한 0을 주지 않습니다. 가만히 있어도 화면이 계속 움직입니다.",
+        "where": "modi1942.js 의 DEADZONE"
+      },
+      {
+        "title": "y축 부호가 반대인 이유",
+        "what": "pitch를 이동값으로 바꿀 때 마이너스를 붙입니다.",
+        "why": "화면 좌표는 위가 0이고 아래로 갈수록 커집니다. 앞으로 기울였을 때 위로 가게 하려면 뒤집어야 합니다.",
+        "where": "modi1942.js 의 map1942Controls"
+      },
+      {
+        "title": "입력 검사는 안전 장치입니다",
+        "what": "숫자가 아니거나 범위를 벗어나면 거부합니다.",
+        "why": "모터를 쓰는 프로젝트에서 NaN이 그대로 전달되면 위험합니다.",
+        "where": "modi1942.js 의 validate1942Command"
+      }
+    ]
+  },
+
+  "flow": {
+    "order": ["parts", "vibe", "modi", "preview", "note"],
+    "parts": {
+      "gate": "checklist",
+      "allowSkip": true,
+      "skipLabel": "모듈 없이 진행하기",
+      "items": [
+        { "id": "computer", "label": "컴퓨터를 켜고 준비했어요", "required": true },
+        { "id": "layout", "label": "위 조립 배치도를 확인했어요", "required": true },
+        { "id": "network", "label": "네트워크 모듈을 연결했어요", "required": false },
+        { "id": "imu", "label": "자이로 모듈을 붙였어요", "required": false },
+        { "id": "button", "label": "버튼 모듈을 붙였어요", "required": false }
+      ]
+    },
+    "vibe": {
+      "gate": "keywords",
+      "hintAfterAttempts": 3,
+      "groups": [
+        {
+          "id": "tilt",
+          "label": "기울기 입력",
+          "patterns": ["자이로", "기울", "틸트", "imu", "각도", "움직"],
+          "hint": "비행기를 무엇으로 움직일지 말해보세요. 준비물에서 붙인 자이로 모듈을 떠올려 보세요."
+        },
+        {
+          "id": "fire",
+          "label": "발사 조작",
+          "patterns": ["버튼", "발사", "공격", "쏘", "미사일", "총알"],
+          "hint": "어떻게 공격할지 말해보세요. 버튼 모듈을 어디에 쓸까요?"
+        },
+        {
+          "id": "goal",
+          "label": "게임 형태",
+          "patterns": ["게임", "비행기", "슈팅", "우주선", "전투기", "적", "피하"],
+          "hint": "어떤 게임인지 말해보세요. 무엇이 나오고, 무엇을 맞히나요?"
+        }
+      ],
+      "onSatisfied": {
+        "unlock": ["modi", "preview"],
+        "jumpTo": "preview",
+        "successMessage": "필요한 내용을 다 말했어요. 바로 실행해볼까요?"
+      }
+    },
+    "modi": { "gate": "none", "mode": "static" },
+    "preview": { "gate": "none", "mode": "static" },
+    "note": { "gate": "none" }
+  }
+}
