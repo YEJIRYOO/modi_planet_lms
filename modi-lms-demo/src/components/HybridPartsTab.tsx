@@ -27,6 +27,7 @@ function statusOf(device: ModiSerialSnapshot, missing: string[]): Status {
   if (device.status === 'connecting') return { tone: 'warn', title: 'MODI 네트워크 모듈에 연결하는 중…', detail: '연결된 모듈 정보를 읽고 있습니다.' };
   if (device.status === 'error') return { tone: 'warn', title: 'MODI 연결에 실패했습니다', detail: device.error ?? '다른 프로그램이 장치를 사용 중인지 확인해 주세요.' };
   if (device.status !== 'connected') return { tone: 'off', title: 'MODI가 연결되지 않았습니다', detail: '네트워크 모듈을 USB로 연결한 뒤 아래 버튼을 눌러 장치를 선택하세요.' };
+  if (device.modules.length === 0) return { tone: 'warn', title: 'USB 포트 연결됨 · 모듈 응답 대기 중', detail: '네트워크 모듈과 전원을 확인하세요. 모듈 탐색을 자동으로 다시 시도하고 있습니다.' };
   if (missing.length) return { tone: 'warn', title: '네트워크 모듈 연결됨 · 필요한 모듈을 확인하세요', detail: `아직 찾지 못한 필수 모듈: ${missing.join(', ')}` };
   return { tone: 'ok', title: 'MODI 모듈 연결 완료', detail: '필수 모듈이 모두 확인되었습니다. 바이브 코딩을 시작해도 좋아요.' };
 }
@@ -121,6 +122,16 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
       {device.status === 'connected' && device.modules.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
           {device.modules.map((module) => <span key={module.id} style={{ padding: '4px 9px', borderRadius: 999, background: t.soft, border: `1px solid ${t.line}`, color: t.inkSoft, fontSize: 12, fontWeight: 650 }}>{moduleName(module.type === 'motor' ? 'motor_a' : module.type)} · #{module.id}</span>)}
+        </div>
+      )}
+      {device.status === 'connected' && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12, color: t.inkSoft, fontSize: 12 }}>
+          {device.imu && <span>IMU {device.imu.roll.toFixed(1)}° / {device.imu.pitch.toFixed(1)}°</span>}
+          {device.button && <span>버튼 {device.button.pressed ? 'ON' : 'OFF'}</span>}
+          {device.dial && <span>다이얼 {device.dial.turn}</span>}
+          {device.joystick && <span>조이스틱 {device.joystick.direction} ({device.joystick.x}, {device.joystick.y})</span>}
+          {device.env && <span>환경 {device.env.temperature}°C / {device.env.humidity}% / 밝기 {device.env.illuminance}%</span>}
+          {device.tofDistance != null && <span>ToF {device.tofDistance.toFixed(1)}cm</span>}
         </div>
       )}
       <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7, color: t.muted }}>장치 선택 창은 보안을 위해 버튼을 눌렀을 때만 열립니다. 다른 MODI 앱이나 Python 프로그램이 연결되어 있다면 먼저 종료해 주세요.</p>

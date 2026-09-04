@@ -35,6 +35,7 @@ interface SerialPortLike {
   writable: { getWriter(): SerialWriter } | null;
   open(options: { baudRate: number; bufferSize?: number }): Promise<void>;
   close(): Promise<void>;
+  getInfo?(): { usbVendorId?: number; usbProductId?: number };
 }
 interface SerialApi {
   requestPort(options?: { filters?: Array<{ usbVendorId?: number; usbProductId?: number }> }): Promise<SerialPortLike>;
@@ -83,6 +84,8 @@ class ModiWebSerial {
   private readTask: Promise<void> | null = null;
   private sensorTimer: number | null = null;
   private buffer = '';
+  private discovering = new Set<number>();
+  private sendQueue: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private snapshot: ModiSerialSnapshot = {
     status: typeof navigator !== 'undefined' && serialApi() ? 'idle' : 'unsupported',
@@ -118,7 +121,11 @@ class ModiWebSerial {
   async reconnectGranted(): Promise<void> {
     const api = serialApi();
     if (!api || this.port || this.snapshot.status === 'connecting') return;
-    const [port] = await api.getPorts();
+    const ports = await api.getPorts();
+    const port = ports.find((candidate) => {
+      const info = candidate.getInfo?.();
+      return info?.usbVendorId === MODI_FILTER.usbVendorId && info.usbProductId === MODI_FILTER.usbProductId;
+    });
     if (!port) return;
     this.port = port;
     this.update({ status: 'connecting', error: null });
@@ -134,13 +141,48 @@ class ModiWebSerial {
     this.writer = this.port.writable.getWriter();
     this.update({ status: 'connected', modules: [], error: null });
     this.readTask = this.readLoop();
-    // 공식 pymodi-plus와 동일: 들어오는 health packet을 보고 ID/UUID 정보를 요청한다.
-    await this.send(packet(0x08, 0, BROADCAST_ID, [0xff, 0x0f]));
-    window.setTimeout(() => { if (this.snapshot.status === 'connected') void this.send(packet(0x08, 0, BROADCAST_ID, [0xff, 0x0f])); }, 500);
-    this.sensorTimer = window.setInterval(() => { void this.requestTestSensors(); }, 1200);
+    await this.setPnpOff();
+    await this.discover(BROADCAST_ID);
+    window.setTimeout(() => {
+      if (this.snapshot.status === 'connected') void this.discover(BROADCAST_ID);
+    }, 500);
+    this.sensorTimer = window.setInterval(() => {
+      void this.pollModules();
+    }, 1200);
   }
 
-  private async send(value: string) { await this.writer?.write(encoder.encode(value)); }
+  private send(value: string, interval = 0) {
+    const operation = this.sendQueue.then(async () => {
+      await this.writer?.write(encoder.encode(value));
+      if (interval > 0) await new Promise<void>((resolve) => window.setTimeout(resolve, interval));
+    });
+    this.sendQueue = operation.catch(() => undefined);
+    return operation;
+  }
+
+  private async sendWithInterval(value: string) {
+    await this.send(value, 40);
+  }
+
+  private async setPnpOff(destination = BROADCAST_ID) {
+    await this.sendWithInterval(packet(0x09, 0, destination, [0, 2]));
+  }
+
+  private async discover(destination: number) {
+    if (this.discovering.has(destination)) return;
+    this.discovering.add(destination);
+    try {
+      await this.sendWithInterval(packet(0x08, 0, destination, [0xff, 0x0f]));
+      await this.sendWithInterval(packet(0x28, 0, destination, [0xff, 0x0f]));
+    } finally {
+      window.setTimeout(() => this.discovering.delete(destination), 200);
+    }
+  }
+
+  private async pollModules() {
+    await this.discover(BROADCAST_ID);
+    await this.requestTestSensors();
+  }
 
   private async readLoop() {
     const decoder = new TextDecoder();
@@ -170,7 +212,7 @@ class ModiWebSerial {
 
   private onPacket(message: { c: number; s: number; d?: number; b: string }) {
     if (message.c === 0x00) { // health: 아직 UUID를 모르는 모듈의 assign 정보를 요청
-      if (!this.snapshot.modules.some((module) => module.id === message.s)) void this.send(packet(0x08, 0, message.s, [0xff, 0x0f]));
+      if (!this.snapshot.modules.some((module) => module.id === message.s)) void this.discover(message.s);
       else this.touch(message.s);
       return;
     }
@@ -183,7 +225,13 @@ class ModiWebSerial {
     const next: ConnectedModiModule = { id: message.s, uuid: uuid.toString(16).toUpperCase(), type: moduleType(uuid), lastSeenAt: Date.now() };
     const modules = [...this.snapshot.modules.filter((module) => module.id !== next.id), next].sort((a, b) => a.id - b.id);
     this.update({ modules });
-    void this.requestTestSensors();
+    void this.initializeModule(next.id);
+  }
+
+  private async initializeModule(moduleId: number) {
+    await this.setPnpOff(moduleId);
+    await this.setPnpOff();
+    await this.requestTestSensors();
   }
 
   /** pymodi-plus와 동일한 property 구독 요청: sampling frequency 91 ≈ 100ms. */
@@ -192,7 +240,7 @@ class ModiWebSerial {
     const sensors = this.snapshot.modules.filter((module) =>
       module.type === 'imu' || module.type === 'button' || module.type === 'dial' ||
       module.type === 'joystick' || module.type === 'env' || module.type === 'tof');
-    for (const module of sensors) await this.send(packet(0x03, 0, module.id, [2, 0, 91, 0]));
+    for (const module of sensors) await this.sendWithInterval(packet(0x03, 0, module.id, [2, 0, 91, 0]));
   }
 
   private onProperty(message: { s: number; d?: number; b: string }) {
@@ -285,6 +333,8 @@ class ModiWebSerial {
     try { await this.port?.close(); } catch { /* already disconnected */ }
     this.port = null;
     this.buffer = '';
+    this.discovering.clear();
+    this.sendQueue = Promise.resolve();
     if (this.sensorTimer != null) window.clearInterval(this.sensorTimer);
     this.sensorTimer = null;
     this.update({
