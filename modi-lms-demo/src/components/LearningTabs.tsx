@@ -41,11 +41,12 @@ interface LearningTabsProps {
   /** HW_SW 정적 커리큘럼을 찾는 키. data/hybridCurriculum.ts 의 courseId 와 맞아야 한다. */
   courseId?: string;
   courseTitle?: string;
+  courseGoal?: string;
   locale?: string;
   project?: CourseProject;
 }
 
-export default function LearningTabs({ courseType, courseId, courseTitle, locale = 'ko', project }: LearningTabsProps) {
+export default function LearningTabs({ courseType, courseId, courseTitle, courseGoal, locale = 'ko', project }: LearningTabsProps) {
   const tabs = useMemo(() => TABS_BY_TYPE[courseType], [courseType]);
   const [active, setActive] = useState<TabKey>(tabs[0]);
 
@@ -100,7 +101,17 @@ export default function LearningTabs({ courseType, courseId, courseTitle, locale
         <div style={{ display: active === 'vibe' ? 'block' : 'none', height: '100%' }}>
           {cur
             ? <HybridVibeTab cur={cur} matched={matched} onProgress={(m) => setMatched(m)} />
-            : <VibeCodingTab courseType={courseType} onResult={setResult} />}
+            : <VibeCodingTab
+                courseType={courseType}
+                courseContext={project?.vibeBrief && courseTitle && courseGoal ? {
+                  title: courseTitle,
+                  goal: courseGoal,
+                  brief: project.vibeBrief,
+                  examples: project.vibeExamples ?? [],
+                  referenceUrl: project.previewUrl,
+                } : undefined}
+                onResult={setResult}
+              />}
         </div>
 
         {active === 'code' && (cur

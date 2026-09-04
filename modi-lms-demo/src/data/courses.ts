@@ -6,6 +6,8 @@ export interface CourseProject {
   downloadUrl?: string;
   previewNote?: string;
   modiBridge?: boolean;
+  vibeBrief?: string;
+  vibeExamples?: string[];
 }
 
 export interface Course {
@@ -42,6 +44,11 @@ export const COURSES: Course[] = [
       previewUrl: '/projects/hand-writing-magic/hand_wirting.html',
       downloadUrl: '/projects/hand-writing-magic-standalone.zip',
       previewNote: '카메라 영상은 브라우저 안에서만 처리됩니다.',
+      vibeBrief: 'MediaPipe가 엄지와 검지의 핀치 동작을 인식해 공중에 그림을 그리는 단일 HTML 앱입니다. 색상·굵기 선택, Undo, Clear, Mirror, PNG 저장과 8개 미션이 있습니다.',
+      vibeExamples: [
+        '손가락 핀치로 그리는 기능이 어떻게 동작하는지 설명해줘',
+        '그림 미션에 달과 마법 지팡이를 추가한 웹앱을 만들어줘',
+      ],
     },
   },
   {
@@ -54,6 +61,11 @@ export const COURSES: Course[] = [
       previewUrl: '/projects/magic-school/index.html',
       downloadUrl: '/projects/magic-school-standalone.zip',
       previewNote: '스크롤·드래그·버튼으로 WebGL 3D 장면과 입학 안내를 체험해 보세요.',
+      vibeBrief: 'React와 WebGL 3D 인터랙션으로 구성된 Nocturne Academy 소개 사이트입니다. 입장 카드, 수업 포스터, 성 갤러리, 네 기숙사와 입학 안내 모달이 스크롤 흐름으로 이어집니다.',
+      vibeExamples: [
+        '마법학교의 네 기숙사를 소개하는 인터랙티브 섹션을 설계해줘',
+        '스크롤에 반응하는 마법 수업 갤러리 웹페이지를 만들어줘',
+      ],
     },
   },
   {
@@ -65,6 +77,11 @@ export const COURSES: Course[] = [
     project: {
       previewUrl: 'https://carddash.net/',
       previewNote: 'WASD로 이동하고 Space로 부스터를 사용하세요. 온라인 콘텐츠는 carddash.net에서 실시간으로 불러옵니다.',
+      vibeBrief: 'CARD DASH는 카드를 뽑고 합치며 순위를 뒤집는 외부 3D 웹 카트 레이싱 게임입니다. 외부 서비스 원본은 읽기 전용이므로 라이브 사이트를 수정하지 않고, 카드·카트·HUD와 연계된 별도 React 프로토타입을 생성합니다.',
+      vibeExamples: [
+        'CARD DASH의 공격·방어·이동 카드 선택 화면을 만들어줘',
+        '카트 순위와 부스터 상태를 보여주는 레이싱 HUD를 만들어줘',
+      ],
     },
   },
   {

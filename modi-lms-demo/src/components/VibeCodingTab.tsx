@@ -12,7 +12,14 @@ import { Segmented, EmptyState } from './ui';
 import { Icon } from './icons';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
-interface Props { courseType?: CourseType; onResult?: (r: VibeResult) => void; }
+interface CourseContext {
+  title: string;
+  goal: string;
+  brief: string;
+  examples: string[];
+  referenceUrl?: string;
+}
+interface Props { courseType?: CourseType; courseContext?: CourseContext; onResult?: (r: VibeResult) => void; }
 
 const CODE_TABS: { key: keyof CodeLangs; label: string; lang: string }[] = [
   { key: 'python', label: 'main.py', lang: 'python' },
@@ -79,7 +86,7 @@ function Hi({ code, lang }: { code: string; lang: string }) {
   );
 }
 
-export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
+export default function VibeCodingTab({ courseType = 'HW', courseContext, onResult }: Props) {
   const codingType: CodingType = courseType === 'SW' ? 'react' : courseType === 'HW_SW' ? 'hybrid' : 'blockly';
   const isReact = codingType === 'react';
   const isHybrid = codingType === 'hybrid';
@@ -142,7 +149,10 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
     };
 
     try {
-      await streamChat({ sessionId: sessionId.current, message: msg, mode, codingType }, onEvent);
+      const message = courseContext
+        ? `현재 강좌: ${courseContext.title}\n학습 목표: ${courseContext.goal}\n프로젝트 설명: ${courseContext.brief}${courseContext.referenceUrl ? `\n참고 미리보기: ${courseContext.referenceUrl}` : ''}\n\n사용자 요청: ${msg}\n\n이 강좌와 직접 관련된 설명과 실행 가능한 React 결과물을 만들어 주세요.`
+        : msg;
+      await streamChat({ sessionId: sessionId.current, message, mode, codingType }, onEvent);
     } catch (e) {
       setMessages((m) => {
         const c = m.slice();
@@ -158,7 +168,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const activeLang = CODE_TABS.find((x) => x.key === codeTab)!.lang;
   const activeCode = code[codeTab] ?? '';
   const hasWeb = !!webFiles && Object.keys(webFiles).length > 0;
-  const examples = isReact ? EXAMPLES.sw : EXAMPLES.hw;
+  const examples = courseContext?.examples ?? (isReact ? EXAMPLES.sw : EXAMPLES.hw);
   const canSend = !busy && input.trim().length > 0;
 
   return (
@@ -172,8 +182,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
                 <Icon name="sparkle" size={21} />
               </span>
               <div>
-                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>만들고 싶은 것을 설명해 주세요</strong>
-                <span style={{ fontSize: 13, color: t.muted, lineHeight: 1.6 }}>아래 예시를 눌러 시작해도 좋아요.</span>
+                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>{courseContext ? `${courseContext.title}에서 만들 것을 설명해 주세요` : '만들고 싶은 것을 설명해 주세요'}</strong>
+                <span style={{ fontSize: 13, color: t.muted, lineHeight: 1.6 }}>{courseContext ? '현재 강좌의 기능과 목표를 바탕으로 결과를 만듭니다.' : '아래 예시를 눌러 시작해도 좋아요.'}</span>
               </div>
               <div style={{ display: 'grid', gap: 6, width: '100%' }}>
                 {examples.map((ex) => (
@@ -221,7 +231,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <textarea
               value={input} rows={2} disabled={busy}
-              placeholder="만들고 싶은 동작을 설명해주세요"
+              placeholder={courseContext ? `${courseContext.title}에서 추가하거나 바꿀 내용을 설명해주세요` : '만들고 싶은 동작을 설명해주세요'}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
               /* outline:'none' 을 두면 키보드 포커스가 보이지 않는다 → 전역 :focus-visible 에 맡긴다 */
