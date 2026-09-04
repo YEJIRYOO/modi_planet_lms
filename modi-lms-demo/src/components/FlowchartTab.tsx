@@ -1,16 +1,6 @@
 import type { VibeResult, FlowNode } from '../lib/vibeClient';
 import { t } from '../styles/tokens';
-
-function Empty({ label }: { label: string }) {
-  return (
-    <div style={{
-      width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: `1px dashed ${t.lineStrong}`, borderRadius: t.rMd, color: t.muted, fontFamily: t.font,
-    }}>
-      바이브 코딩에서 생성하면 {label}가 여기 표시됩니다.
-    </div>
-  );
-}
+import { EmptyState } from './ui';
 
 const CHIP: Record<string, { bg: string; fg: string; icon: string }> = {
   start: { bg: t.greenSoft, fg: t.green, icon: '▶' },
@@ -46,10 +36,10 @@ function Node({ node, depth }: { node: FlowNode; depth: number }) {
 
 export default function FlowchartTab({ result }: { result: VibeResult | null }) {
   const flow = result?.blockly_flowchart ?? [];
-  if (flow.length === 0) return <Empty label="흐름도" />;
+  if (flow.length === 0) return <EmptyState icon="flow" title="아직 흐름도가 없어요" hint="바이브 코딩에서 동작을 설명하면 프로그램 흐름이 여기에 그려집니다." />;
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', textAlign: 'left', fontFamily: t.font, color: t.ink, padding: 4 }}>
+    <div style={{ height: '100%', overflow: 'auto', fontFamily: t.font, color: t.ink, padding: 4 }}>
       {result?.blockly_detail && (
         <p style={{ color: t.inkSoft, lineHeight: 1.6, margin: '0 0 12px', background: t.warm, padding: 12, borderRadius: t.rSm }}>
           {result.blockly_detail}

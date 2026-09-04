@@ -1,5 +1,6 @@
 import type { CourseType } from '../types';
 import { t } from '../styles/tokens';
+import type { IconName } from '../components/icons';
 
 // 설계문서(강의안) 스키마 — 실제 커리큘럼 데이터 필드에 1:1 대응.
 export interface DesignDoc {
@@ -12,10 +13,10 @@ export interface DesignDoc {
 }
 
 // 유형 메타: 키는 CourseType(HW_SW 언더바), 표시 라벨은 "HW+SW".
-export const TYPE_META: Record<CourseType, { label: string; fg: string; bg: string; full: string; icon: string }> = {
-  HW:    { label: 'HW',    fg: t.blue,   bg: t.blueSoft,   full: '하드웨어',   icon: '🔌' },
-  SW:    { label: 'SW',    fg: t.purple, bg: t.purpleSoft, full: '소프트웨어', icon: '🖥️' },
-  HW_SW: { label: 'HW+SW', fg: t.green,  bg: t.greenSoft,  full: '융합',       icon: '🧩' },
+export const TYPE_META: Record<CourseType, { label: string; fg: string; bg: string; full: string; icon: IconName }> = {
+  HW:    { label: 'HW',    fg: t.blue,   bg: t.blueSoft,   full: '하드웨어',   icon: 'chip' },
+  SW:    { label: 'SW',    fg: t.purple, bg: t.purpleSoft, full: '소프트웨어', icon: 'monitor' },
+  HW_SW: { label: 'HW+SW', fg: t.green,  bg: t.greenSoft,  full: '융합',       icon: 'layers' },
 };
 
 // 유형별 학습 화면 탭 구성 (컨벤션 노트 §4).

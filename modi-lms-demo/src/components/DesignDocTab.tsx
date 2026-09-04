@@ -1,23 +1,13 @@
 import type { VibeResult } from '../lib/vibeClient';
 import { t } from '../styles/tokens';
-
-function Empty({ label }: { label: string }) {
-  return (
-    <div style={{
-      width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: `1px dashed ${t.lineStrong}`, borderRadius: t.rMd, color: t.muted, fontFamily: t.font,
-    }}>
-      바이브 코딩에서 생성하면 {label}가 여기 표시됩니다.
-    </div>
-  );
-}
+import { EmptyState } from './ui';
 
 export default function DesignDocTab({ result }: { result: VibeResult | null }) {
   const doc = result?.design_doc;
-  if (!doc) return <Empty label="설계 문서" />;
+  if (!doc) return <EmptyState icon="doc" title="아직 설계 문서가 없어요" hint="바이브 코딩에서 ‘설계부터’ 모드로 대화하면 여기에 정리됩니다." />;
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', textAlign: 'left', fontFamily: t.font, color: t.ink, padding: 4 }}>
+    <div style={{ height: '100%', overflow: 'auto', fontFamily: t.font, color: t.ink, padding: 4 }}>
       <h3 style={{ fontSize: 20, fontWeight: 700, margin: '4px 0 6px' }}>{doc.project_name || '설계 문서'}</h3>
       {doc.description && <p style={{ color: t.inkSoft, margin: '0 0 16px', lineHeight: 1.6 }}>{doc.description}</p>}
 

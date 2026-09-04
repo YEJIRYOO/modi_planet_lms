@@ -2,19 +2,19 @@ import type { Course } from '../data/courses';
 import { t } from '../styles/tokens';
 import { TYPE_META } from '../data/designDoc';
 import { TypeBadge } from './ui';
+import { CourseThumb } from './CourseThumb';
 
 export function CourseCard({ c, onClick }: { c: Course; onClick: () => void }) {
   const m = TYPE_META[c.type];
   return (
-    <button onClick={onClick} style={{
+    // 호버 상승은 .lift(CSS)로 — 예전 onMouseEnter 방식은 키보드 포커스에 반응하지 않았다.
+    <button type="button" onClick={onClick} className="lift lift--card" style={{
       fontFamily: t.font, cursor: 'pointer', textAlign: 'left', display: 'block', padding: 0,
       background: t.surface, border: `1px solid ${t.line}`, borderRadius: t.rMd, overflow: 'hidden',
-      boxShadow: t.shSm, transition: 'transform .16s ease, box-shadow .16s ease', width: '100%',
-    }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = t.shMd; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = t.shSm; }}>
-      <div style={{ height: 128, background: `linear-gradient(135deg, ${m.bg}, ${t.coralPale})`, display: 'grid', placeItems: 'center', position: 'relative' }}>
-        <span style={{ fontSize: 40, opacity: .85 }}>{m.icon}</span>
+      boxShadow: t.shSm, width: '100%',
+    }}>
+      <div style={{ position: 'relative' }}>
+        <CourseThumb course={c} height={128} />
         <span style={{ position: 'absolute', top: 12, left: 12 }}><TypeBadge type={c.type} /></span>
       </div>
       <div style={{ padding: '16px 18px 18px', display: 'grid', gap: 8 }}>

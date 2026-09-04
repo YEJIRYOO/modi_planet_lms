@@ -1,27 +1,17 @@
 import type { VibeResult } from '../lib/vibeClient';
 import { t } from '../styles/tokens';
-
-function Empty({ label }: { label: string }) {
-  return (
-    <div style={{
-      width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: `1px dashed ${t.lineStrong}`, borderRadius: t.rMd, color: t.muted, fontFamily: t.font,
-    }}>
-      바이브 코딩에서 생성하면 {label}가 여기 표시됩니다.
-    </div>
-  );
-}
+import { EmptyState } from './ui';
 
 export default function LearningNotesTab({ result }: { result: VibeResult | null }) {
   const notes = result?.learning_notes ?? [];
-  if (notes.length === 0) return <Empty label="학습 노트" />;
+  if (notes.length === 0) return <EmptyState icon="note" title="아직 학습 노트가 없어요" hint="바이브 코딩에서 작품을 만들면 배운 개념이 여기에 정리됩니다." />;
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', textAlign: 'left', fontFamily: t.font, color: t.ink, padding: 4, display: 'grid', gap: 12 }}>
+    <div style={{ height: '100%', overflow: 'auto', fontFamily: t.font, color: t.ink, padding: 4, display: 'grid', gap: 12 }}>
       {notes.map((n, i) => (
         <div key={i} style={{ border: `1px solid ${t.line}`, borderRadius: t.rMd, padding: 16, background: t.surface, boxShadow: t.shSm }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ width: 24, height: 24, borderRadius: 8, background: t.coral, color: '#fff', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+            <span style={{ width: 24, height: 24, borderRadius: 8, background: t.coralInk, color: '#fff', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
             <strong style={{ fontSize: 16 }}>{n.title}</strong>
           </div>
           <Row label="무엇을" text={n.what} />

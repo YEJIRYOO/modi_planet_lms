@@ -7,15 +7,16 @@ import LearningNotesTab from './LearningNotesTab';
 import PartsTab from './PartsTab';
 import PreviewTab from './PreviewTab';
 import { t } from '../styles/tokens';
+import { Icon, type IconName } from './icons';
 
 type TabKey = 'vibe' | 'preview' | 'modi' | 'parts' | 'note';
 
-const TAB_LABEL: Record<TabKey, string> = {
-  vibe: '바이브 코딩',
-  preview: '미리보기',
-  modi: '모디',
-  parts: '준비물',
-  note: '학습 노트',
+const TAB_META: Record<TabKey, { label: string; icon: IconName }> = {
+  vibe: { label: '바이브 코딩', icon: 'sparkle' },
+  preview: { label: '미리보기', icon: 'preview' },
+  modi: { label: '모디', icon: 'blocks' },
+  parts: { label: '준비물', icon: 'parts' },
+  note: { label: '학습 노트', icon: 'note' },
 };
 
 const TABS_BY_TYPE: Record<CourseType, TabKey[]> = {
@@ -36,23 +37,32 @@ export default function LearningTabs({ courseType, locale = 'ko' }: LearningTabs
   const [result, setResult] = useState<VibeResult | null>(null);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 560, textAlign: 'left', fontFamily: t.font }}>
-      <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${t.line}`, marginBottom: 12, flexWrap: 'wrap' }}>
+    // minHeight 560 을 두면 낮은 화면에서 부모(flex:1)를 넘겨 스크롤이 이중으로 생겼다 → 제거.
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, fontFamily: t.font }}>
+      <div role="tablist" aria-label="학습 단계" style={{ display: 'flex', gap: 2, borderBottom: `1px solid ${t.line}`, marginBottom: 12, flexWrap: 'wrap' }}>
         {tabs.map((key) => {
           const on = active === key;
+          const meta = TAB_META[key];
           return (
             <button
               key={key}
+              type="button"
+              role="tab"
+              aria-selected={on}
               onClick={() => setActive(key)}
               style={{
-                padding: '10px 16px', border: 'none', cursor: 'pointer', background: 'transparent',
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '10px 14px', border: 'none', cursor: 'pointer', background: 'transparent',
                 fontFamily: t.font, fontSize: 14,
                 borderBottom: on ? `2px solid ${t.coral}` : '2px solid transparent',
-                fontWeight: on ? 700 : 500,
+                marginBottom: -1,
+                fontWeight: on ? 750 : 550,
                 color: on ? t.ink : t.muted,
+                transition: 'color .16s ease, border-color .16s ease',
               }}
             >
-              {TAB_LABEL[key]}
+              <Icon name={meta.icon} size={16} />
+              {meta.label}
             </button>
           );
         })}

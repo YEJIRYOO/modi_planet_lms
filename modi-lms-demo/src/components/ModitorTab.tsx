@@ -58,11 +58,12 @@ export default function ModitorTab({ locale = 'ko', debug = false, blocklyXml }:
       {blocklyXml && (
         <button
           type="button"
+          className="lift lift--sm"
           onClick={postXml}
           style={{
             position: 'absolute', top: 12, right: 12, zIndex: 2,
             padding: '8px 14px', border: 'none', borderRadius: 10, cursor: 'pointer',
-            background: t.coral, color: '#fff', fontFamily: t.font, fontWeight: 700, boxShadow: t.shCoral,
+            background: t.coralInk, color: '#fff', fontFamily: t.font, fontSize: 14, fontWeight: 700, boxShadow: t.shCoral,
           }}
         >
           블록 불러오기

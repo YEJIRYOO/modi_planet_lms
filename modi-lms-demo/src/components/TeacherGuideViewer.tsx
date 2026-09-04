@@ -2,7 +2,13 @@ import { useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent
 import type { Course } from '../data/courses';
 import { streamChat, type CodeLangs, type VibeEvent, type VibeMode } from '../lib/vibeClient';
 import { t } from '../styles/tokens';
-import { Btn, TypeBadge } from './ui';
+import { Btn, TypeBadge, Segmented } from './ui';
+import { Icon } from './icons';
+
+const MODE_OPTIONS = [
+  { value: 'quick' as VibeMode, label: '바로 만들기' },
+  { value: 'design' as VibeMode, label: '설계부터' },
+];
 
 const HW_FILES: { key: keyof CodeLangs; label: string }[] = [
   { key: 'python', label: 'main.py' },
@@ -79,7 +85,7 @@ export function TeacherGuideViewer({ course, onClose, onStart }: {
   return (
     <div onClick={onClose} role="dialog" aria-modal="true" aria-label={`${course.title} 교안`}
       style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(31,29,29,.58)', backdropFilter: 'blur(5px)', display: 'grid', placeItems: 'center', padding: 12 }}>
-      <div onClick={(event) => event.stopPropagation()} style={{ width: 'min(1500px, 98vw)', height: 'min(930px, calc(100vh - 24px))', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 22, background: t.surface, boxShadow: '0 28px 90px rgba(22,21,21,.28)', fontFamily: t.font, color: t.ink }}>
+      <div onClick={(event) => event.stopPropagation()} style={{ width: 'min(1500px, 98vw)', height: 'min(930px, calc(100dvh - 24px))', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 22, background: t.surface, boxShadow: '0 28px 90px rgba(22,21,21,.28)', fontFamily: t.font, color: t.ink }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: `1px solid ${t.line}`, flex: '0 0 auto' }}>
           <TypeBadge type={course.type} />
           <div style={{ minWidth: 0 }}>
@@ -88,7 +94,7 @@ export function TeacherGuideViewer({ course, onClose, onStart }: {
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             {onStart && <Btn onClick={onStart}>이 차시 수업 시작</Btn>}
-            <button onClick={onClose} aria-label="닫기" style={{ width: 38, height: 38, border: 0, borderRadius: '50%', background: t.soft, color: t.muted, fontSize: 23, cursor: 'pointer' }}>×</button>
+            <button type="button" onClick={onClose} aria-label="닫기" className="lift lift--sm" style={{ width: 38, height: 38, display: 'grid', placeItems: 'center', border: 0, borderRadius: '50%', background: t.soft, color: t.muted, cursor: 'pointer' }}><Icon name="close" size={18} /></button>
           </div>
         </header>
 
@@ -117,16 +123,15 @@ export function TeacherGuideViewer({ course, onClose, onStart }: {
               {isSoftware && generatedFiles.length === 0 && <span style={{ padding: '9px 10px', color: '#8b949e', fontSize: 13 }}>App.tsx</span>}
             </div>
             <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-              {shownCode ? <CodeView code={shownCode} /> : <div style={{ padding: 20, color: '#7d8590', font: '13px/1.7 ui-monospace, Consolas, monospace' }}>아래 프롬프트에 요청하면 생성된 코드가 여기에 표시됩니다.</div>}
+              {shownCode ? <CodeView code={shownCode} /> : <div style={{ padding: 20, color: '#7d8590', font: `13px/1.7 ${t.mono}` }}>아래 프롬프트에 요청하면 생성된 코드가 여기에 표시됩니다.</div>}
             </div>
           </section>
         </div>
 
         <footer style={{ flex: '0 0 auto', borderTop: `1px solid ${t.line}`, padding: '10px 16px 14px', background: t.surface }}>
-          {(reply || status) && <div aria-live="polite" style={{ maxHeight: 54, overflow: 'auto', marginBottom: 8, padding: '8px 11px', borderRadius: 10, background: t.soft, color: t.inkSoft, fontSize: 12.5, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{reply || `… ${status}`}</div>}
+          {(reply || status) && <div aria-live="polite" style={{ maxHeight: 54, overflow: 'auto', marginBottom: 8, padding: '8px 11px', borderRadius: 10, background: t.soft, color: t.inkSoft, fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{reply || status}</div>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
-            <button type="button" onClick={() => setMode('quick')} style={modeStyle(mode === 'quick')}>바로 만들기</button>
-            <button type="button" onClick={() => setMode('design')} style={modeStyle(mode === 'design')}>설계부터</button>
+            <Segmented label="생성 모드" value={mode} options={MODE_OPTIONS} onChange={setMode} />
             <span style={{ color: t.muted, fontSize: 12 }}>{mode === 'quick' ? '설명하면 바로 코드를 만들어요' : '설계부터 함께 잡아가요'}</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -135,7 +140,7 @@ export function TeacherGuideViewer({ course, onClose, onStart }: {
               onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }}
               style={{ flex: 1, resize: 'none', padding: '10px 12px', border: `1px solid ${t.lineStrong}`, borderRadius: t.rSm, fontFamily: 'inherit', fontSize: 14, outlineColor: t.coral }} />
             <button type="button" onClick={() => void send()} disabled={busy || !input.trim()} aria-label="프롬프트 보내기"
-              style={{ width: 48, border: 0, borderRadius: t.rSm, background: busy || !input.trim() ? t.lineStrong : t.coral, color: '#fff', fontSize: 19, cursor: busy || !input.trim() ? 'default' : 'pointer' }}>↑</button>
+              style={{ width: 48, flex: '0 0 48px', display: 'grid', placeItems: 'center', border: 0, borderRadius: t.rSm, background: busy || !input.trim() ? t.lineStrong : t.coralInk, color: '#fff', cursor: busy || !input.trim() ? 'default' : 'pointer' }}><Icon name="send" size={19} /></button>
           </div>
         </footer>
       </div>
@@ -161,15 +166,12 @@ function GuideSection({ title, children }: { title: string; children: React.Reac
 }
 
 function CodeView({ code }: { code: string }) {
-  return <pre style={{ margin: 0, padding: '16px 18px', textAlign: 'left', color: '#c9d1d9', font: '13px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', whiteSpace: 'pre', tabSize: 2 }}>{code}</pre>;
+  return <pre style={{ margin: 0, padding: '16px 18px', color: '#c9d1d9', font: `13px/1.7 ${t.mono}`, whiteSpace: 'pre', tabSize: 2 }}>{code}</pre>;
 }
 
-const listStyle: CSSProperties = { margin: 0, paddingLeft: 20, display: 'grid', gap: 7, color: t.inkSoft, fontSize: 13.5, lineHeight: 1.65 };
+const listStyle: CSSProperties = { margin: 0, paddingLeft: 20, display: 'grid', gap: 7, color: t.inkSoft, fontSize: 13, lineHeight: 1.65 };
 
 function codeTabStyle(active: boolean): CSSProperties {
   return { padding: '8px 14px', border: 0, borderRadius: '8px 8px 0 0', background: active ? '#0d1117' : 'transparent', color: active ? '#fff' : '#8b949e', cursor: 'pointer', fontFamily: t.font, fontWeight: active ? 700 : 400, whiteSpace: 'nowrap' };
 }
 
-function modeStyle(active: boolean): CSSProperties {
-  return { padding: '6px 11px', borderRadius: 9, cursor: 'pointer', background: active ? t.coralPale : t.surface, border: active ? `1px solid ${t.coral}` : `1px solid ${t.line}`, color: active ? t.coralStrong : t.muted, fontFamily: t.font, fontWeight: active ? 700 : 400 };
-}
