@@ -3,6 +3,7 @@ import type { CourseType } from '../types';
 import type { CourseProject } from '../data/courses';
 import type { VibeResult } from '../lib/vibeClient';
 import { findHybridCurriculum } from '../data/hybridCurriculum';
+import { findSoftwareCurriculum } from '../data/softwareCurriculum';
 import ModitorTab from './ModitorTab';
 import VibeCodingTab from './VibeCodingTab';
 import HybridVibeTab from './HybridVibeTab';
@@ -41,12 +42,11 @@ interface LearningTabsProps {
   /** HW_SW 정적 커리큘럼을 찾는 키. data/hybridCurriculum.ts 의 courseId 와 맞아야 한다. */
   courseId?: string;
   courseTitle?: string;
-  courseGoal?: string;
   locale?: string;
   project?: CourseProject;
 }
 
-export default function LearningTabs({ courseType, courseId, courseTitle, courseGoal, locale = 'ko', project }: LearningTabsProps) {
+export default function LearningTabs({ courseType, courseId, courseTitle, locale = 'ko', project }: LearningTabsProps) {
   const tabs = useMemo(() => TABS_BY_TYPE[courseType], [courseType]);
   const [active, setActive] = useState<TabKey>(tabs[0]);
 
@@ -55,9 +55,11 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
 
   /* HW+SW 는 AI 를 호출하지 않는다. 정적 커리큘럼을 찾아 키워드 진행도로 탭을 연다. */
   const cur = useMemo(() => (courseType === 'HW_SW' ? findHybridCurriculum(courseId) : undefined), [courseType, courseId]);
+  const swCur = useMemo(() => (courseType === 'SW' ? findSoftwareCurriculum(courseId) : undefined), [courseType, courseId]);
+  const staticCur = cur ?? swCur;
   const [matched, setMatched] = useState<string[]>([]);
-  const unlocked = !!cur && matched.length >= cur.keywords.length;
-  const softwareLocked = courseType === 'SW' && !!project?.vibeBrief && !result;
+  const unlocked = !!staticCur && matched.length >= staticCur.keywords.length;
+  const softwareLocked = !!swCur && !unlocked;
 
   const locked = (icon: IconName, title: string, hint = '바이브 코딩에서 정해야 할 세 가지를 모두 설명하면 열립니다.') => (
     <EmptyState icon={icon} title={title} hint={hint} />
@@ -100,19 +102,9 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
       <div style={{ flex: 1, minHeight: 0 }}>
         {/* 바이브 코딩은 항상 마운트 유지 → 탭을 옮겨도 대화·진행도가 사라지지 않음 */}
         <div style={{ display: active === 'vibe' ? 'block' : 'none', height: '100%' }}>
-          {cur
-            ? <HybridVibeTab cur={cur} matched={matched} onProgress={(m) => setMatched(m)} />
-            : <VibeCodingTab
-                courseType={courseType}
-                courseContext={project?.vibeBrief && courseTitle && courseGoal ? {
-                  title: courseTitle,
-                  goal: courseGoal,
-                  brief: project.vibeBrief,
-                  examples: project.vibeExamples ?? [],
-                  referenceUrl: project.previewUrl,
-                } : undefined}
-                onResult={setResult}
-              />}
+          {staticCur
+            ? <HybridVibeTab cur={staticCur} matched={matched} onProgress={(m) => setMatched(m)} hasCode={!!cur} />
+            : <VibeCodingTab courseType={courseType} onResult={setResult} />}
         </div>
 
         {active === 'code' && (cur
@@ -137,8 +129,8 @@ export default function LearningTabs({ courseType, courseId, courseTitle, course
 
         {active === 'note' && (cur
           ? (unlocked ? <LearningNotesTab result={{ learning_notes: cur.notes }} /> : locked('note', '아직 학습 노트가 없어요'))
-          : softwareLocked
-            ? locked('note', '아직 학습 노트가 없어요', '바이브 코딩 결과가 완성되면 학습 노트가 열립니다.')
+          : swCur
+            ? (unlocked ? <LearningNotesTab result={{ learning_notes: swCur.notes }} /> : locked('note', '아직 학습 노트가 없어요', '세 가지 핵심 내용을 모두 설명하면 학습 노트가 열립니다.'))
             : <LearningNotesTab result={result} />)}
 
         {active === 'modi' && <ModitorTab locale={locale} blocklyXml={result?.blockly_xml ?? undefined} />}

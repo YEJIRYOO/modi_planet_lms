@@ -5,7 +5,14 @@
    기존 vibeClient.streamChat 과 같은 모양(콜백으로 이벤트 통지 + Promise 반환)을 유지해서
    화면 쪽 코드가 실제 스트리밍과 구분되지 않게 했다. */
 
-import type { HybridCurriculum } from '../data/hybridCurriculum';
+import type { HybridKeyword } from '../data/hybridCurriculum';
+
+export interface StaticVibeCurriculum {
+  examples: string[];
+  keywords: [HybridKeyword, HybridKeyword, HybridKeyword];
+  unlockReply: string;
+  promptTitle?: string;
+}
 
 export type StaticVibeEvent =
   | { type: 'status'; message: string }
@@ -27,7 +34,7 @@ function normalize(s: string): string {
 }
 
 /** 사용자가 이번에 새로 맞힌 키워드 label 목록 */
-function matchKeywords(cur: HybridCurriculum, text: string, already: string[]): string[] {
+function matchKeywords(cur: StaticVibeCurriculum, text: string, already: string[]): string[] {
   const hay = normalize(text);
   return cur.keywords
     .filter((k) => !already.includes(k.label))
@@ -49,7 +56,7 @@ const STATUSES_UNLOCK = [
 ];
 
 /** 응답 본문을 조립한다. */
-function composeReply(cur: HybridCurriculum, newly: string[], matchedAll: string[]): string {
+function composeReply(cur: StaticVibeCurriculum, newly: string[], matchedAll: string[]): string {
   const parts: string[] = [];
 
   for (const label of newly) {
@@ -91,7 +98,7 @@ async function streamText(text: string, onEvent: (e: StaticVibeEvent) => void, s
  * @param already   이전 턴까지 맞힌 키워드 label 들
  */
 export async function runStaticTurn(
-  cur: HybridCurriculum,
+  cur: StaticVibeCurriculum,
   message: string,
   already: string[],
   onEvent: (e: StaticVibeEvent) => void,
@@ -101,7 +108,11 @@ export async function runStaticTurn(
   const matched = [...already, ...newly];
   const unlocked = matched.length >= cur.keywords.length;
 
-  const statuses = unlocked ? STATUSES_UNLOCK : STATUSES;
+  const statuses = cur.promptTitle
+    ? unlocked
+      ? ['요청을 이해하는 중', '핵심 기능을 연결하는 중', '미리보기를 준비하는 중']
+      : ['요청을 이해하는 중', '프로젝트 기능을 확인하는 중', '핵심 개념을 정리하는 중']
+    : unlocked ? STATUSES_UNLOCK : STATUSES;
   for (const s of statuses) {
     if (signal?.aborted) break;
     onEvent({ type: 'status', message: s });

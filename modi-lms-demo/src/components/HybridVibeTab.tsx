@@ -2,8 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
-import type { HybridCurriculum } from '../data/hybridCurriculum';
-import { runStaticTurn } from '../lib/staticVibe';
+import { runStaticTurn, type StaticVibeCurriculum } from '../lib/staticVibe';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
 
@@ -16,9 +15,10 @@ import { Icon } from './icons';
 interface Msg { role: 'user' | 'assistant'; text: string }
 
 interface Props {
-  cur: HybridCurriculum;
+  cur: StaticVibeCurriculum;
   matched: string[];
   onProgress: (matched: string[], unlocked: boolean) => void;
+  hasCode?: boolean;
 }
 
 const hStyle: CSSProperties = { fontWeight: 750, fontSize: 15, margin: '10px 0 6px', color: t.ink };
@@ -36,7 +36,7 @@ const md: Components = {
   ),
 };
 
-export default function HybridVibeTab({ cur, matched, onProgress }: Props) {
+export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -100,7 +100,7 @@ export default function HybridVibeTab({ cur, matched, onProgress }: Props) {
                 <Icon name="sparkle" size={21} />
               </span>
               <div>
-                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>만들고 싶은 것을 설명해 주세요</strong>
+                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>{cur.promptTitle ?? '만들고 싶은 것을 설명해 주세요'}</strong>
                 <span style={{ fontSize: 13, color: t.muted, lineHeight: 1.6 }}>아래 예시를 눌러 시작해도 좋아요.</span>
               </div>
               <div style={{ display: 'grid', gap: 6, width: '100%' }}>
@@ -176,8 +176,8 @@ export default function HybridVibeTab({ cur, matched, onProgress }: Props) {
 
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 12.5, lineHeight: 1.7, color: t.muted }}>
           {done < cur.keywords.length
-            ? '세 가지가 모두 정해지면 코드 보기와 미리보기가 열립니다.'
-            : '코드 보기와 미리보기가 열렸어요. 위쪽 탭에서 확인해 보세요.'}
+            ? `세 가지가 모두 정해지면 ${hasCode ? '코드 보기·' : ''}미리보기와 학습 노트가 열립니다.`
+            : `${hasCode ? '코드 보기·' : ''}미리보기와 학습 노트가 열렸어요. 위쪽 탭에서 확인해 보세요.`}
         </p>
       </div>
     </div>
