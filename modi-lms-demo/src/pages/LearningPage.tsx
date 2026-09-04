@@ -77,7 +77,7 @@ export default function LearningPage() {
         flex: 1, minHeight: 0, background: t.surface, border: `1px solid ${t.line}`,
         borderRadius: t.rLg, padding: 14, boxShadow: t.shSm, boxSizing: 'border-box',
       }}>
-        <LearningTabs courseType={course.type} locale="ko" />
+        <LearningTabs courseType={course.type} courseId={course.id} locale="ko" />
       </div>
     </div>
   );

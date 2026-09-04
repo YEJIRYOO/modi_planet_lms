@@ -14,6 +14,7 @@ import { Icon, type IconName } from '../components/icons';
 const STEP_ICON: Record<string, IconName> = {
   '바이브 코딩': 'sparkle',
   '코드 에디터': 'terminal',
+  '코드 보기': 'terminal',
   '모디': 'blocks',
   '미리보기': 'preview',
   '준비물': 'parts',

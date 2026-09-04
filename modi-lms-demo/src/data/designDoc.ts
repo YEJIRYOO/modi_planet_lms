@@ -23,5 +23,5 @@ export const TYPE_META: Record<CourseType, { label: string; fg: string; bg: stri
 export const TABS: Record<CourseType, string[]> = {
   HW:    ['바이브 코딩', '코드 에디터', '모디', '설계문서', '학습 노트'],
   SW:    ['바이브 코딩', '미리보기', '설계문서', '학습 노트'],
-  HW_SW: ['바이브 코딩', '미리보기', '코드 에디터', '모디', '설계문서', '학습 노트'],
+  HW_SW: ['준비물', '바이브 코딩', '코드 보기', '미리보기', '학습 노트'],
 };
