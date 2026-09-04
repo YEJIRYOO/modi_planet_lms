@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
-import { runStaticTurn, type StaticVibeCurriculum } from '../lib/staticVibe';
+import { MIN_STATIC_PROMPT_LENGTH, runStaticTurn, type StaticVibeCurriculum } from '../lib/staticVibe';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
 
@@ -151,6 +151,9 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
               style={{ width: 46, flex: '0 0 46px', display: 'grid', placeItems: 'center', borderRadius: t.rSm, border: 'none', background: canSend ? t.coralInk : t.lineStrong, color: '#fff', cursor: canSend ? 'pointer' : 'default' }}>
               <Icon name="send" size={19} />
             </button>
+          </div>
+          <div style={{ marginTop: 6, textAlign: 'right', color: input.length >= MIN_STATIC_PROMPT_LENGTH ? t.green : t.muted, fontSize: 11 }}>
+            자세한 설명 권장 · {input.length} / {MIN_STATIC_PROMPT_LENGTH}자 이상
           </div>
         </div>
       </div>

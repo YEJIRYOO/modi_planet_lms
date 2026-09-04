@@ -14,6 +14,8 @@ export interface StaticVibeCurriculum {
   promptTitle?: string;
 }
 
+export const MIN_STATIC_PROMPT_LENGTH = 80;
+
 export type StaticVibeEvent =
   | { type: 'status'; message: string }
   | { type: 'token'; text: string }
@@ -104,9 +106,20 @@ export async function runStaticTurn(
   onEvent: (e: StaticVibeEvent) => void,
   signal?: AbortSignal,
 ): Promise<StaticTurnResult> {
-  const newly = matchKeywords(cur, message, already);
+  const tooShort = message.trim().length < MIN_STATIC_PROMPT_LENGTH;
+  const newly = tooShort ? [] : matchKeywords(cur, message, already);
   const matched = [...already, ...newly];
   const unlocked = matched.length >= cur.keywords.length;
+
+  if (tooShort) {
+    onEvent({ type: 'status', message: '요청의 내용을 확인하는 중' });
+    await sleep(450);
+    if (!signal?.aborted) {
+      await streamText(`요청이 제대로 전달되었나요? 설명이 너무 짧아 만들고 싶은 동작을 충분히 이해하지 못했어요.\n\n입력 방식, 핵심 동작, 필요한 조건, 기대하는 결과와 확인 방법을 포함해 ${MIN_STATIC_PROMPT_LENGTH}자 이상으로 자세히 설명해 주세요.`, onEvent, signal);
+    }
+    onEvent({ type: 'done', matched, unlocked });
+    return { matched, unlocked };
+  }
 
   const statuses = cur.promptTitle
     ? unlocked
