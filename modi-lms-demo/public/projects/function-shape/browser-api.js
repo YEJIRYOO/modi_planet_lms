@@ -1,3 +1,4 @@
+(function () {
 const specs = {
   linear: { names: ['a', 'b'], ranges: { a: [-3, 3], b: [-4, 4] } },
   absolute: { names: ['a', 'h', 'k'], ranges: { a: [-3, 3], h: [-4, 4], k: [-4, 4] } },
@@ -82,3 +83,4 @@ window.fetch = (input, options) => {
   }
   return json({ mode: live ? 'real' : 'mock', family: state.family, round, params: state.params, target: state.target, selected, dial, accuracy: state.accuracy, feedback: state.feedback, total_score: totalScore });
 };
+})();

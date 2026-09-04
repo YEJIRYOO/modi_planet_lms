@@ -1,3 +1,4 @@
+(function () {
 let playing = false;
 let volume = 65;
 let lastNote = 0;
@@ -54,3 +55,4 @@ window.fetch = (input, options) => {
   return nativeFetch(input, options);
 };
 navigator.sendBeacon = () => true;
+})();

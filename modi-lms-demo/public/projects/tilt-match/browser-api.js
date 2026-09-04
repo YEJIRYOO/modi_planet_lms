@@ -1,3 +1,4 @@
+(function () {
 let hardware = null;
 let score = 0;
 let round = 1;
@@ -47,3 +48,4 @@ window.fetch = (input, options) => {
   return json({ mode: live ? 'real' : 'mock', controls, pitch: controls.pitch, roll: controls.roll, direction, left, right, target_color: target, score, round, feedback });
 };
 navigator.sendBeacon = () => true;
+})();

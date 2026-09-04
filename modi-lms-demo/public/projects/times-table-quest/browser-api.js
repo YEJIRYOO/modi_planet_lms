@@ -1,3 +1,4 @@
+(function () {
 let game;
 let nextAt = 0;
 let offset = 0;
@@ -72,3 +73,4 @@ window.fetch = (input, options) => {
   }
   return json({ mode: live ? 'real' : 'mock', ...game, has_dial: has('dial'), has_led: has('led'), has_speaker: has('speaker') });
 };
+})();

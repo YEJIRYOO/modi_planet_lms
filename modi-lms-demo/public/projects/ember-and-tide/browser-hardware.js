@@ -1,3 +1,4 @@
+(function () {
 const NativeWebSocket = window.WebSocket;
 const sockets = new Set();
 let device = null;
@@ -89,3 +90,4 @@ addEventListener('message', (event) => {
   device = event.data.device;
   sockets.forEach(emit);
 });
+})();

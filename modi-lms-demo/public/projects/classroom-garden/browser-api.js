@@ -1,3 +1,4 @@
+(function () {
 let garden;
 let hardware = null;
 let lastButton = false;
@@ -78,3 +79,4 @@ window.fetch = (input, options) => {
   const elapsed = (now - garden.started) / 1000;
   return json({ mode: live ? 'real' : 'mock', pace: garden.pace, elapsed, remaining: Math.max(0, duration - elapsed), temperature, humidity, light, dial, distance, water_amount: waterAmount, soil: Math.round(garden.soil * 10) / 10, happiness: Math.round(garden.happiness * 10) / 10, environment_quality: Math.round(environmentQuality * 100), growth: Math.round(garden.growth * 100) / 100, stage, pose, status, event, score: Math.round(garden.score), waters: garden.waters, pets: garden.pets, complete: garden.growth >= 100 });
 };
+})();

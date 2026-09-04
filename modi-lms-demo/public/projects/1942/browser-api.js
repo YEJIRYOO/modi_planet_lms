@@ -1,3 +1,4 @@
+(function () {
 let hardware = null;
 let lastLed = '';
 let lastMotor = null;
@@ -38,3 +39,4 @@ window.fetch = (input, options) => {
 };
 const nativeBeacon = navigator.sendBeacon?.bind(navigator);
 navigator.sendBeacon = (url, data) => new URL(String(url), location.href).pathname === '/api/stop' || nativeBeacon?.(url, data) || false;
+})();
