@@ -20,7 +20,7 @@ export default function CourseListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [type, setType] = useState<'전체' | CourseType>('전체');
   const levelParam = searchParams.get('level');
-  const level: '전체' | CourseLevel = levelParam === 'elementary' || levelParam === 'middle' ? levelParam : '전체';
+  const level: '전체' | CourseLevel = levelParam === 'elementary' || levelParam === 'middle' || levelParam === 'high' ? levelParam : '전체';
   const list = VISIBLE_COURSES.filter((course) =>
     (type === '전체' || course.type === type) && (level === '전체' || course.level === level));
   const setLevel = (value: '전체' | CourseLevel) => {

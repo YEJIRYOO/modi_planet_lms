@@ -66,7 +66,7 @@ export const COURSES: Course[] = [
     title: 'CARD DASH 3D 레이싱',
     description: '카드를 뽑고 합치며 순위를 뒤집는 3D 웹 카트 레이싱 게임',
     type: 'SW',
-    level: 'middle',
+    level: 'high',
     goal: '카드 전략과 주행 조작을 결합한 3D 레이스 체험',
     project: {
       previewUrl: 'https://carddash.net/',
@@ -77,7 +77,7 @@ export const COURSES: Course[] = [
     title: 'EMBER & TIDE 물불 모험',
     description: '불의 아이와 물의 아이를 번갈아 조종하며 온도·빛·방향 퍼즐을 해결하는 3스테이지 협동 어드벤처',
     type: 'HW_SW',
-    level: 'middle',
+    level: 'high',
     goal: '두 원소 캐릭터로 세 유적의 퍼즐을 풀고 각자의 포털에 도달',
     modules: ['network', 'imu', 'joystick'],
     project: {
@@ -92,7 +92,7 @@ export const COURSES: Course[] = [
     title: 'Classroom Garden',
     description: '교실의 온도·습도·빛과 물주기·쓰다듬기 활동으로 씨앗부터 꽃까지 키우는 과학·정보 프로젝트',
     type: 'HW_SW',
-    level: 'middle',
+    level: 'high',
     goal: '환경을 균형 있게 관리해 5단계 식물 성장 완료',
     modules: ['network', 'env', 'dial'],
     project: {

@@ -3,6 +3,7 @@
 export const LEVELS = [
   { value: 'elementary', k: '초', name: '초등', sub: '초등 프로젝트', thumb: '/brand/beginner-thumbnail.png' },
   { value: 'middle', k: '중', name: '중등', sub: '중등 프로젝트', thumb: '/brand/intermediate-thumbnail.png' },
+  { value: 'high', k: '고', name: '고등', sub: '고등 프로젝트', thumb: '/brand/advanced-thumbnail.png' },
 ] as const;
 
 export type CourseLevel = typeof LEVELS[number]['value'];
@@ -10,4 +11,5 @@ export type CourseLevel = typeof LEVELS[number]['value'];
 export const LEVEL_NAME: Record<CourseLevel, string> = {
   elementary: '초등',
   middle: '중등',
+  high: '고등',
 };
