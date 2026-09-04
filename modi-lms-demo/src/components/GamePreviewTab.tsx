@@ -60,6 +60,9 @@ export default function GamePreviewTab({ cur }: { cur: HybridCurriculum }) {
           <div style={{ padding: '11px 13px', borderRadius: t.rSm, background: '#0d1117', marginBottom: 12 }}>
             <code style={{ fontFamily: t.mono, fontSize: 13, color: '#c9d1d9' }}>{cur.runCommand}</code>
           </div>
+          <p style={{ margin: '0 0 12px', fontSize: 12, lineHeight: 1.7, color: t.muted }}>
+            {cur.mockNote}
+          </p>
           {!isLocalHost() && (
             <p style={{ margin: '0 0 12px', fontSize: 12, lineHeight: 1.7, color: t.muted }}>
               게임을 이미 실행했는데도 이 화면이 보이면, 브라우저가 로컬 주소 접근을 막고 있는 것일 수 있습니다.

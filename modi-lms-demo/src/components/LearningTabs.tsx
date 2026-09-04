@@ -10,6 +10,7 @@ import PartsTab from './PartsTab';
 import HybridPartsTab from './HybridPartsTab';
 import PreviewTab from './PreviewTab';
 import GamePreviewTab from './GamePreviewTab';
+import BrowserHardwarePreview from './BrowserHardwarePreview';
 import CodeViewTab from './CodeViewTab';
 import { t } from '../styles/tokens';
 import { EmptyState } from './ui';
@@ -105,7 +106,7 @@ export default function LearningTabs({ courseType, courseId, locale = 'ko' }: Le
         {active === 'parts' && (cur ? <HybridPartsTab cur={cur} /> : <PartsTab result={result} />)}
 
         {active === 'preview' && (cur
-          ? (unlocked ? <GamePreviewTab cur={cur} /> : locked('preview', '아직 미리볼 결과가 없어요'))
+          ? (unlocked ? (courseId === '6' ? <BrowserHardwarePreview /> : <GamePreviewTab cur={cur} />) : locked('preview', '아직 미리볼 결과가 없어요'))
           : <PreviewTab result={result} courseType={courseType} />)}
 
         {active === 'note' && (cur

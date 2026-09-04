@@ -19,6 +19,7 @@ export const COURSES: Course[] = [
   { id: '3', title: '1942', description: '자이로로 조종하고 버튼으로 발사하는 비행 슈팅', type: 'HW_SW', goal: 'IMU·버튼으로 조종하는 슈팅 게임', modules: ['imu', 'button', 'motor_a'] },
   { id: '4', title: 'Tilt Match', description: 'MODI LED 색과 같은 쪽으로 기울여 점수를 얻는 반응 게임', type: 'HW_SW', goal: 'LED 색 판별 + 기울기 반응 게임', modules: ['imu', 'led'] },
   { id: '5', title: 'Loop Studio', description: '다이얼과 버튼으로 조작하는 8칸 음악 시퀀서', type: 'HW_SW', goal: 'MODI 스피커로 연주하는 시퀀서', modules: ['dial', 'button', 'speaker'] },
+  { id: '6', title: 'Tilt & Click 연결 점검', description: '자이로를 기울이고 버튼을 눌러 HW+SW 연결을 한 번에 확인', type: 'HW_SW', goal: '자이로·버튼 실시간 입력 점검', modules: ['imu', 'button'] },
 ];
 
 export const findCourse = (id?: string) => COURSES.find((c) => c.id === id);

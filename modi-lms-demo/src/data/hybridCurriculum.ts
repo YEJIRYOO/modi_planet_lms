@@ -191,6 +191,98 @@ particles = particles.filter(p => p.life > 0);
   ],
 };
 
+/* ─────────────────────── Tilt & Click 연결 점검 ─────────────────────── */
+
+const TILT_CLICK_TEST: HybridCurriculum = {
+  courseId: '6',
+  // 별도 앱을 만들지 않고 자이로·버튼 입력이 모두 구현된 1942 실행 환경을 재사용한다.
+  port: 8101,
+  folder: '1942',
+  runCommand: 'python3 app.py --mode real --port 8101',
+  modules: [
+    { key: 'imu', role: '필수', reason: '좌우·앞뒤 기울기 값이 실시간으로 전달되는지 확인한다', count: 1 },
+    { key: 'button', role: '필수', reason: '누름과 뗌 상태가 정확히 전달되는지 확인한다', count: 1 },
+  ],
+  mockNote: '자이로와 버튼이 모두 연결되어야 real 모드로 점검할 수 있습니다. 실행 전 준비물 탭의 브라우저 연결을 해제해야 Python이 USB 포트를 사용할 수 있습니다.',
+  examples: [
+    '자이로와 버튼이 둘 다 연결됐는지 확인하고 싶어',
+    '기울기 값이 움직이고 버튼을 한 번 누르면 한 번만 반응하는 테스트를 만들고 싶어',
+  ],
+  keywords: [
+    {
+      label: '모듈 연결',
+      synonyms: ['연결', '인식', '모듈', '네트워크', 'usb', 'real', '장치'],
+      reply: '**모듈 연결**부터 확인합니다.\n\n준비물 탭에서 네트워크 모듈을 USB로 연결했을 때 자이로와 버튼이 각각 목록에 나타나야 합니다. 둘 중 하나라도 빠지면 케이블과 모듈 결합 상태를 다시 확인합니다.',
+      hint: '먼저 두 모듈이 컴퓨터에 무엇으로 표시되어야 하는지 말해 보세요.',
+    },
+    {
+      label: '자이로 입력',
+      synonyms: ['자이로', 'imu', '기울', '각도', 'roll', 'pitch', '좌우', '앞뒤'],
+      reply: '**자이로 입력**은 연속값으로 확인합니다.\n\n모듈을 평평하게 두었을 때의 값을 기준으로 잡고 좌우·앞뒤로 천천히 기울입니다. 화면의 비행기가 방향에 맞게 부드럽게 움직이면 센서값이 HW에서 SW까지 전달된 것입니다.',
+      hint: '자이로를 어느 방향으로 움직여 무엇이 변하는지 확인할까요?',
+    },
+    {
+      label: '버튼 입력',
+      synonyms: ['버튼', '누름', '눌러', '클릭', '발사', 'pressed', '뗌'],
+      reply: '**버튼 입력**은 누름과 뗌을 함께 확인합니다.\n\n버튼을 짧게 한 번 눌렀을 때 총알이 한 번 발사되고, 길게 눌러도 연속 발사되지 않아야 합니다. 다시 뗐다 눌렀을 때 한 번 더 발사되면 상태 변화가 정상입니다.',
+      hint: '버튼을 짧게 누를 때와 길게 누를 때 각각 어떻게 반응해야 할까요?',
+    },
+  ],
+  unlockReply: '**모듈 연결 · 자이로 입력 · 버튼 입력** 점검 항목이 모두 정해졌습니다.\n\n미리보기에서 상태가 `MODI 연결 · real 모드`인지 확인한 뒤, 기울이기와 짧게 누르기·길게 누르기를 차례로 시험해 보세요.',
+  codeFiles: {
+    'app.py — 두 모듈 입력 읽기': `# 한 번의 상태 조회에서 자이로와 버튼을 함께 읽는다.
+
+def read(self, mock):
+    self.connect()
+
+    if self.bundle:
+        pitch = float(self.bundle.imus[0].angle_y)
+        roll = float(self.bundle.imus[0].angle_x)
+        button = bool(self.bundle.buttons[0].pressed)
+    else:
+        pitch = float(mock.get('pitch', 0))
+        roll = float(mock.get('roll', 0))
+        button = bool(mock.get('button', False))
+
+    if not math.isfinite(pitch) or not math.isfinite(roll):
+        raise RuntimeError('IMU returned invalid data')
+
+    return {
+        'mode': self.mode,
+        'controls': {'pitch': pitch, 'roll': roll},
+        'attack': button,
+    }
+`,
+    'app.js — 입력 반응 확인': `// 자이로 연속값은 이동에, 버튼 상태 변화는 1회 발사에 사용한다.
+
+function apply(data) {
+  const roll = Math.max(-90, Math.min(90, data.controls.roll));
+  const pitch = Math.max(-90, Math.min(90, data.controls.pitch));
+
+  ship.x = Math.max(30, Math.min(W - 30, ship.x + roll / 12));
+  ship.y = Math.max(70, Math.min(H - 35, ship.y - pitch / 12));
+
+  // 안 눌림(false)에서 눌림(true)으로 바뀐 순간만 한 번 처리한다.
+  if (data.attack && !attackLast) fire();
+  attackLast = data.attack;
+}
+`,
+    '점검표 — 통과 기준': `1. 준비물 탭의 연결 목록에 자이로와 버튼이 모두 보인다.
+2. 미리보기에 "MODI 연결 · real 모드"가 표시된다.
+3. 자이로를 좌우로 기울이면 비행기가 같은 방향으로 움직인다.
+4. 자이로를 앞뒤로 기울이면 비행기가 위아래로 움직인다.
+5. 버튼을 짧게 한 번 누르면 총알이 한 번 발사된다.
+6. 버튼을 길게 눌러도 총알이 계속 생성되지 않는다.
+7. 버튼을 뗐다가 다시 누르면 총알이 한 번 더 발사된다.
+`,
+  },
+  notes: [
+    { title: '연결 성공 기준', what: '자이로와 버튼이 모두 탐색되고 게임이 real 모드로 실행되어야 한다.', why: '브라우저 목록만으로는 실제 게임 프로세스가 모듈 값을 읽는지까지 알 수 없다.', where: '준비물 탭의 모듈 목록 + 미리보기 상단 상태 배지' },
+    { title: '연속값 점검', what: '자이로를 천천히 네 방향으로 기울여 화면 이동의 방향과 연속성을 본다.', why: '모듈 인식에 성공해도 값이 멈추거나 축 방향이 뒤집힐 수 있다.', where: '미리보기의 비행기 이동' },
+    { title: '버튼 엣지 검출', what: '누르는 순간에만 한 번 반응하고, 뗀 뒤 다시 눌러야 다음 반응이 생긴다.', why: '버튼의 pressed 값은 누르는 동안 계속 참이므로 그대로 처리하면 중복 입력이 발생한다.', where: 'app.js 의 attackLast 비교' },
+  ],
+};
+
 /* ─────────────────────────── Tilt Match ─────────────────────────── */
 
 const TILT_MATCH: HybridCurriculum = {
@@ -456,7 +548,7 @@ def note(self, value, duration=.28, volume_override=None):
   ],
 };
 
-export const HYBRID_CURRICULA: HybridCurriculum[] = [F1942, TILT_MATCH, LOOP_STUDIO];
+export const HYBRID_CURRICULA: HybridCurriculum[] = [F1942, TILT_MATCH, LOOP_STUDIO, TILT_CLICK_TEST];
 
 export const findHybridCurriculum = (courseId?: string) =>
   HYBRID_CURRICULA.find((c) => c.courseId === courseId);

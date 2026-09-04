@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { HybridCurriculum } from '../data/hybridCurriculum';
-import { probeGame, type GameHealth } from '../lib/gameServer';
 import { moduleName } from '../lib/modules';
+import { modiWebSerial, type ModiModuleType, type ModiSerialSnapshot } from '../lib/modiWebSerial';
 import { ModuleIcon } from './ModuleIcon';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
 
-/* HW+SW 준비물 탭 — 학습의 첫 단계.
-   여기서 필요한 모듈을 확인하고, 게임 서버를 real 모드로 띄워 페어링까지 끝내야
-   미리보기에서 실기기로 조작할 수 있다. */
+/* HW+SW 준비물 탭 — 학습의 첫 단계. 브라우저가 USB 시리얼로 MODI+ Network
+   Module에 직접 연결하고, 실제로 발견한 모듈과 커리큘럼 준비물을 대조한다. */
 
 const ROLE_COLOR: Record<string, { bg: string; fg: string }> = {
   필수: { bg: t.coralSoft, fg: t.coralStrong },
@@ -19,27 +18,16 @@ const sectionTitle = { fontSize: 13, fontWeight: 700, color: t.coralStrong, marg
 
 interface Status { tone: 'ok' | 'warn' | 'off'; title: string; detail: string }
 
-function statusOf(h: GameHealth | null): Status {
-  if (!h || !h.reachable) {
-    return { tone: 'off', title: '게임 서버가 실행되지 않았습니다', detail: '아래 명령으로 게임을 먼저 실행하세요.' };
-  }
-  if (!h.readable) {
-    return {
-      tone: 'warn',
-      title: '게임 서버 실행 중 · 모듈 상태는 확인할 수 없음',
-      detail: '서버는 응답하지만 연결 정보를 읽을 수 없습니다. 모듈 연결 여부는 미리보기 화면 우측 상단 표시로 확인하세요.',
-    };
-  }
-  if (h.mode === 'real' && h.connected) {
-    return { tone: 'ok', title: 'MODI 모듈 연결 완료 · real 모드', detail: '미리보기에서 실제 모듈로 조작할 수 있습니다.' };
-  }
-  return {
-    tone: 'warn',
-    title: 'mock 모드로 실행 중 — 모듈이 잡히지 않았습니다',
-    detail: h.error
-      ? `서버 메시지: ${h.error}`
-      : '모듈을 USB/전원에 연결한 뒤 게임을 --mode real 로 다시 실행하세요.',
-  };
+const keyToType = (key: string): ModiModuleType =>
+  (key === 'motor_a' || key === 'motor_b' ? 'motor' : key === 'environment' ? 'env' : key) as ModiModuleType;
+
+function statusOf(device: ModiSerialSnapshot, missing: string[]): Status {
+  if (device.status === 'unsupported') return { tone: 'off', title: '이 브라우저는 USB 연결을 지원하지 않습니다', detail: 'Chrome 또는 Edge 데스크톱 최신 버전에서 HTTPS(또는 localhost)로 열어 주세요.' };
+  if (device.status === 'connecting') return { tone: 'warn', title: 'MODI 네트워크 모듈에 연결하는 중…', detail: '연결된 모듈 정보를 읽고 있습니다.' };
+  if (device.status === 'error') return { tone: 'warn', title: 'MODI 연결에 실패했습니다', detail: device.error ?? '다른 프로그램이 장치를 사용 중인지 확인해 주세요.' };
+  if (device.status !== 'connected') return { tone: 'off', title: 'MODI가 연결되지 않았습니다', detail: '네트워크 모듈을 USB로 연결한 뒤 아래 버튼을 눌러 장치를 선택하세요.' };
+  if (missing.length) return { tone: 'warn', title: '네트워크 모듈 연결됨 · 필요한 모듈을 확인하세요', detail: `아직 찾지 못한 필수 모듈: ${missing.join(', ')}` };
+  return { tone: 'ok', title: 'MODI 모듈 연결 완료', detail: '필수 모듈이 모두 확인되었습니다. 바이브 코딩을 시작해도 좋아요.' };
 }
 
 const TONE: Record<Status['tone'], { bg: string; fg: string; icon: 'check' | 'chip' }> = {
@@ -49,36 +37,23 @@ const TONE: Record<Status['tone'], { bg: string; fg: string; icon: 'check' | 'ch
 };
 
 export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
-  const [health, setHealth] = useState<GameHealth | null>(null);
-  const [copied, setCopied] = useState(false);
-  const alive = useRef(true);
+  const device = useSyncExternalStore(modiWebSerial.subscribe, modiWebSerial.getSnapshot, modiWebSerial.getSnapshot);
+  const [busy, setBusy] = useState(false);
 
-  /* 2.5초마다 상태를 다시 본다. 학생이 탭을 보고 있는 동안 게임을 켜는 경우가 많아
-     한 번만 확인하면 계속 "미실행" 으로 남는다. */
   useEffect(() => {
-    alive.current = true;
-    let timer: number | undefined;
-    const tick = async () => {
-      const h = await probeGame(cur.port);
-      if (!alive.current) return;
-      setHealth(h);
-      timer = window.setTimeout(tick, 2500);
-    };
-    void tick();
-    return () => {
-      alive.current = false;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [cur.port]);
+    void modiWebSerial.reconnectGranted();
+  }, []);
 
-  const st = statusOf(health);
+  const missing = cur.modules.filter((m) => m.role === '필수' && !device.modules.some((found) => found.type === keyToType(m.key))).map((m) => moduleName(m.key));
+  const st = statusOf(device, missing);
   const tone = TONE[st.tone];
 
-  const copy = () => {
-    void navigator.clipboard?.writeText(cur.runCommand).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    });
+  const toggleConnection = async () => {
+    setBusy(true);
+    try {
+      if (device.status === 'connected') await modiWebSerial.disconnect();
+      else await modiWebSerial.connect();
+    } finally { setBusy(false); }
   };
 
   return (
@@ -103,19 +78,19 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
         })}
       </div>
 
-      <div style={sectionTitle}>게임 실행하기</div>
+      <div style={sectionTitle}>브라우저에서 MODI 연결하기</div>
       <ol style={{ margin: '0 0 12px', paddingLeft: 20, lineHeight: 1.8, color: t.inkSoft, fontSize: 14 }}>
-        <li>위의 <strong>필수</strong> 모듈을 모두 조립하고 전원을 켠 뒤 컴퓨터에 연결합니다.</li>
-        <li><code style={codeInline}>{cur.folder}</code> 폴더에서 아래 명령을 실행합니다.</li>
-        <li>아래 상태 표시가 <strong>real 모드</strong>로 바뀌면 준비가 끝났습니다.</li>
+        <li>필수 모듈을 네트워크 모듈에 조립하고 전원을 켭니다.</li>
+        <li>네트워크 모듈과 컴퓨터를 USB 케이블로 연결합니다.</li>
+        <li><strong>MODI 연결</strong>을 누르고 목록에서 <strong>MODI+ Network Module</strong>을 선택합니다.</li>
       </ol>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderRadius: t.rSm, background: '#0d1117', marginBottom: 22 }}>
-        <code style={{ flex: 1, minWidth: 0, fontFamily: t.mono, fontSize: 13, color: '#c9d1d9', overflowX: 'auto', whiteSpace: 'pre' }}>{cur.runCommand}</code>
-        <button type="button" onClick={copy}
-          style={{ flex: '0 0 auto', border: '1px solid #30363d', background: '#161b22', color: copied ? '#7ee787' : '#c9d1d9', borderRadius: 8, padding: '6px 12px', fontFamily: t.font, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          {copied ? '복사됨' : '복사'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+        <button type="button" disabled={busy || device.status === 'connecting' || device.status === 'unsupported'} onClick={() => void toggleConnection()}
+          style={{ border: 0, borderRadius: t.rSm, background: device.status === 'connected' ? t.surface : t.coralInk, color: device.status === 'connected' ? t.inkSoft : '#fff', boxShadow: device.status === 'connected' ? `inset 0 0 0 1px ${t.lineStrong}` : 'none', padding: '10px 18px', fontFamily: t.font, fontSize: 14, fontWeight: 750, cursor: 'pointer', opacity: busy ? .6 : 1 }}>
+          {device.status === 'connected' ? '연결 해제' : device.status === 'connecting' ? '연결 중…' : 'MODI 연결'}
         </button>
+        <span style={{ color: t.muted, fontSize: 12 }}>USB 시리얼 · 921600 baud · 서버 설치 불필요</span>
       </div>
 
       <div style={sectionTitle}>연결 상태</div>
@@ -129,12 +104,12 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
         </div>
       </div>
 
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7, color: t.muted }}>{cur.mockNote}</p>
+      {device.status === 'connected' && device.modules.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {device.modules.map((module) => <span key={module.id} style={{ padding: '4px 9px', borderRadius: 999, background: t.soft, border: `1px solid ${t.line}`, color: t.inkSoft, fontSize: 12, fontWeight: 650 }}>{moduleName(module.type === 'motor' ? 'motor_a' : module.type)} · #{module.id}</span>)}
+        </div>
+      )}
+      <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7, color: t.muted }}>장치 선택 창은 보안을 위해 버튼을 눌렀을 때만 열립니다. 다른 MODI 앱이나 Python 프로그램이 연결되어 있다면 먼저 종료해 주세요.</p>
     </div>
   );
 }
-
-const codeInline = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  background: '#f5f5f7', padding: '1px 6px', borderRadius: 5, fontSize: 13,
-} as const;
