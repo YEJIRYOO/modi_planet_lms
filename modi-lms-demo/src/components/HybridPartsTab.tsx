@@ -97,7 +97,7 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
       <ol style={{ margin: '0 0 12px', paddingLeft: 20, lineHeight: 1.8, color: t.inkSoft, fontSize: 14 }}>
         <li>필수 모듈을 네트워크 모듈에 조립하고 전원을 켭니다.</li>
         <li>네트워크 모듈과 컴퓨터를 USB 케이블로 연결합니다.</li>
-        <li><strong>MODI 연결</strong>을 누르고 전체 시리얼 포트 목록에서 <strong>MODI+ Network Module</strong>을 선택합니다.</li>
+        <li><strong>MODI 연결</strong>을 누르고 장치 목록에서 <strong>MODI+ Network Module</strong>을 선택합니다.</li>
       </ol>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
@@ -105,7 +105,7 @@ export default function HybridPartsTab({ cur }: { cur: HybridCurriculum }) {
           style={{ border: 0, borderRadius: t.rSm, background: device.status === 'connected' ? t.surface : t.coralInk, color: device.status === 'connected' ? t.inkSoft : '#fff', boxShadow: device.status === 'connected' ? `inset 0 0 0 1px ${t.lineStrong}` : 'none', padding: '10px 18px', fontFamily: t.font, fontSize: 14, fontWeight: 750, cursor: 'pointer', opacity: busy ? .6 : 1 }}>
           {device.status === 'connected' ? '연결 해제' : device.status === 'connecting' ? '연결 중…' : 'MODI 연결'}
         </button>
-        <span style={{ color: t.muted, fontSize: 12 }}>USB 시리얼 · 921600 baud · 서버 설치 불필요</span>
+        <span style={{ color: t.muted, fontSize: 12 }}>Windows WebUSB · macOS/ChromeOS Web Serial · 서버 설치 불필요</span>
       </div>
 
       <div style={sectionTitle}>연결 상태</div>

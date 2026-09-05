@@ -43,6 +43,34 @@ interface SerialApi {
   addEventListener(type: 'disconnect', listener: (event: Event) => void): void;
 }
 
+interface UsbEndpointLike { direction: 'in' | 'out'; endpointNumber: number }
+interface UsbAlternateLike { interfaceClass: number; alternateSetting: number; endpoints: UsbEndpointLike[] }
+interface UsbInterfaceLike { interfaceNumber: number; claimed?: boolean; alternates: UsbAlternateLike[] }
+interface UsbConfigurationLike { interfaces: UsbInterfaceLike[] }
+interface UsbTransferInResult { data?: DataView; status?: string }
+interface UsbTransferOutResult { bytesWritten?: number; status?: string }
+interface UsbDeviceLike {
+  vendorId: number;
+  productId: number;
+  productName?: string;
+  opened: boolean;
+  configuration?: UsbConfigurationLike;
+  open(): Promise<void>;
+  close(): Promise<void>;
+  selectConfiguration(value: number): Promise<void>;
+  claimInterface(interfaceNumber: number): Promise<void>;
+  releaseInterface?(interfaceNumber: number): Promise<void>;
+  selectAlternateInterface(interfaceNumber: number, alternateSetting: number): Promise<void>;
+  controlTransferOut(setup: { requestType: string; recipient: string; request: number; value: number; index: number }): Promise<UsbTransferOutResult>;
+  transferIn(endpointNumber: number, length: number): Promise<UsbTransferInResult>;
+  transferOut(endpointNumber: number, data: Uint8Array): Promise<UsbTransferOutResult>;
+}
+interface UsbApi {
+  requestDevice(options: { filters: Array<{ vendorId: number; productId?: number }> }): Promise<UsbDeviceLike>;
+  getDevices(): Promise<UsbDeviceLike[]>;
+  addEventListener(type: 'disconnect', listener: (event: Event & { device?: UsbDeviceLike }) => void): void;
+}
+
 const MODI_USB_IDS = [
   { usbVendorId: 0x2fde, usbProductId: 0x0003 },
   { usbVendorId: 0x2fde, usbProductId: 0x0002 },
@@ -50,6 +78,22 @@ const MODI_USB_IDS = [
 ] as const;
 const BROADCAST_ID = 0xfff;
 const encoder = new TextEncoder();
+
+function usbApi(): UsbApi | undefined {
+  return (navigator as Navigator & { usb?: UsbApi }).usb;
+}
+
+function prefersWebUsb(): boolean {
+  return /Windows/i.test(navigator.userAgent) && !!usbApi();
+}
+
+function isModiUsbDevice(device: UsbDeviceLike): boolean {
+  return device.vendorId === 0x2fde && device.productId >= 1 && device.productId <= 4;
+}
+
+function connectionAvailable(): boolean {
+  return !!serialApi() || !!usbApi();
+}
 
 function isModiPort(port: SerialPortLike): boolean {
   const info = port.getInfo?.();
@@ -91,6 +135,11 @@ class ModiWebSerial {
   private port: SerialPortLike | null = null;
   private reader: SerialReader | null = null;
   private writer: SerialWriter | null = null;
+  private usbDevice: UsbDeviceLike | null = null;
+  private usbInEndpoint: number | null = null;
+  private usbOutEndpoint: number | null = null;
+  private usbInterfaceNumbers: number[] = [];
+  private usbReadActive = false;
   private readTask: Promise<void> | null = null;
   private sensorTimer: number | null = null;
   private buffer = '';
@@ -98,13 +147,16 @@ class ModiWebSerial {
   private sendQueue: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private snapshot: ModiSerialSnapshot = {
-    status: typeof navigator !== 'undefined' && serialApi() ? 'idle' : 'unsupported',
+    status: typeof navigator !== 'undefined' && connectionAvailable() ? 'idle' : 'unsupported',
     modules: [], imu: null, dial: null, joystick: null, env: null, tofDistance: null,
     button: null, buttonPressed: null, error: null,
   };
 
   constructor() {
     serialApi()?.addEventListener('disconnect', () => { void this.disconnect(); });
+    usbApi()?.addEventListener('disconnect', (event) => {
+      if (!event.device || event.device === this.usbDevice) void this.disconnect();
+    });
   }
 
   getSnapshot = () => this.snapshot;
@@ -115,6 +167,10 @@ class ModiWebSerial {
   }
 
   async connect(): Promise<void> {
+    if (prefersWebUsb()) {
+      await this.connectUsb();
+      return;
+    }
     const api = serialApi();
     if (!api) { this.update({ status: 'unsupported' }); return; }
     this.update({ status: 'connecting', error: null });
@@ -129,6 +185,19 @@ class ModiWebSerial {
 
   /** 이전에 권한을 준 장치는 페이지 재방문 시 사용자 팝업 없이 복구한다. */
   async reconnectGranted(): Promise<void> {
+    if (prefersWebUsb()) {
+      const api = usbApi();
+      if (!api || this.usbDevice || this.snapshot.status === 'connecting') return;
+      const device = (await api.getDevices()).find(isModiUsbDevice);
+      if (!device) return;
+      this.update({ status: 'connecting', error: null });
+      try { await this.openUsbDevice(device); }
+      catch (error) {
+        this.usbDevice = null;
+        this.update({ status: 'error', error: this.connectionError(error, 'WebUSB') });
+      }
+      return;
+    }
     const api = serialApi();
     if (!api || this.port || this.snapshot.status === 'connecting') return;
     const ports = await api.getPorts();
@@ -146,8 +215,81 @@ class ModiWebSerial {
     if (!this.port.readable || !this.port.writable) throw new Error('MODI 시리얼 스트림을 열 수 없습니다.');
     this.reader = this.port.readable.getReader();
     this.writer = this.port.writable.getWriter();
-    this.update({ status: 'connected', modules: [], error: null });
     this.readTask = this.readLoop();
+    await this.afterConnected();
+  }
+
+  private async connectUsb() {
+    const api = usbApi();
+    if (!api) { this.update({ status: 'unsupported' }); return; }
+    this.update({ status: 'connecting', error: null });
+    try {
+      const device = await api.requestDevice({
+        filters: [1, 2, 3, 4].map((productId) => ({ vendorId: 0x2fde, productId })),
+      });
+      await this.openUsbDevice(device);
+    } catch (error) {
+      if ((error as DOMException)?.name === 'NotFoundError') this.update({ status: 'idle' });
+      else {
+        try { await this.usbDevice?.close(); } catch { /* 열기 실패 후 정리 */ }
+        this.usbDevice = null;
+        this.update({ status: 'error', error: this.connectionError(error, 'WebUSB') });
+      }
+    }
+  }
+
+  private async openUsbDevice(device: UsbDeviceLike) {
+    this.usbDevice = device;
+    this.usbInterfaceNumbers = [];
+    this.usbInEndpoint = null;
+    this.usbOutEndpoint = null;
+    if (!device.opened) await device.open();
+    if (!device.configuration) await device.selectConfiguration(1);
+
+    const interfaces = device.configuration?.interfaces ?? [];
+    const endpointCandidates = interfaces.flatMap((iface) => iface.alternates.map((alternate) => ({ iface, alternate })))
+      .filter(({ alternate }) => alternate.endpoints.some((endpoint) => endpoint.direction === 'in')
+        && alternate.endpoints.some((endpoint) => endpoint.direction === 'out'))
+      .sort((left, right) => Number(right.alternate.interfaceClass === 0xff) - Number(left.alternate.interfaceClass === 0xff));
+
+    let selected: { iface: UsbInterfaceLike; alternate: UsbAlternateLike } | undefined;
+    for (const candidate of endpointCandidates) {
+      try {
+        if (!candidate.iface.claimed) await device.claimInterface(candidate.iface.interfaceNumber);
+        await device.selectAlternateInterface(candidate.iface.interfaceNumber, candidate.alternate.alternateSetting);
+        this.usbInterfaceNumbers.push(candidate.iface.interfaceNumber);
+        selected = candidate;
+        break;
+      } catch { /* 다음 인터페이스 확인 */ }
+    }
+    if (!selected) throw new Error('MODI USB 데이터 인터페이스를 열 수 없습니다. MODI+ USB 드라이버를 확인해 주세요.');
+
+    for (const iface of interfaces) {
+      if (this.usbInterfaceNumbers.includes(iface.interfaceNumber)) continue;
+      try {
+        if (!iface.claimed) await device.claimInterface(iface.interfaceNumber);
+        this.usbInterfaceNumbers.push(iface.interfaceNumber);
+      } catch { /* 데이터 인터페이스만으로 계속 시도 */ }
+    }
+
+    this.usbInEndpoint = selected.alternate.endpoints.find((endpoint) => endpoint.direction === 'in')?.endpointNumber ?? null;
+    this.usbOutEndpoint = selected.alternate.endpoints.find((endpoint) => endpoint.direction === 'out')?.endpointNumber ?? null;
+    if (this.usbInEndpoint == null || this.usbOutEndpoint == null) throw new Error('MODI USB 입출력 endpoint를 찾지 못했습니다.');
+
+    for (const interfaceNumber of this.usbInterfaceNumbers) {
+      try {
+        await device.controlTransferOut({ requestType: 'class', recipient: 'interface', request: 0x22, value: 1, index: interfaceNumber });
+        break;
+      } catch { /* 제어 인터페이스 후보 계속 확인 */ }
+    }
+
+    this.usbReadActive = true;
+    this.readTask = this.readUsbLoop();
+    await this.afterConnected();
+  }
+
+  private async afterConnected() {
+    this.update({ status: 'connected', modules: [], error: null });
     await this.setPnpOff();
     await this.discover(BROADCAST_ID);
     window.setTimeout(() => {
@@ -158,9 +300,23 @@ class ModiWebSerial {
     }, 1200);
   }
 
+  private connectionError(error: unknown, transport: string) {
+    const message = error instanceof Error ? error.message : String(error);
+    return `${transport} 연결 실패: ${message}`;
+  }
+
   private send(value: string, interval = 0) {
     const operation = this.sendQueue.then(async () => {
-      await this.writer?.write(encoder.encode(value));
+      const bytes = encoder.encode(value);
+      if (this.usbDevice && this.usbOutEndpoint != null) {
+        const result = await this.usbDevice.transferOut(this.usbOutEndpoint, bytes);
+        if (result.status && result.status !== 'ok') throw new Error(`MODI USB 쓰기 실패: ${result.status}`);
+        if (result.bytesWritten != null && result.bytesWritten !== bytes.byteLength) {
+          throw new Error(`MODI USB 쓰기 일부 완료: ${result.bytesWritten}/${bytes.byteLength}`);
+        }
+      } else {
+        await this.writer?.write(bytes);
+      }
       if (interval > 0) await new Promise<void>((resolve) => window.setTimeout(resolve, interval));
     });
     this.sendQueue = operation.catch(() => undefined);
@@ -201,6 +357,24 @@ class ModiWebSerial {
       }
     } catch (error) {
       if (this.snapshot.status === 'connected') this.update({ status: 'error', error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  private async readUsbLoop() {
+    const decoder = new TextDecoder();
+    try {
+      while (this.usbReadActive && this.usbDevice?.opened && this.usbInEndpoint != null) {
+        const result = await this.usbDevice.transferIn(this.usbInEndpoint, 256);
+        if (result.status && result.status !== 'ok') throw new Error(`MODI USB 읽기 실패: ${result.status}`);
+        if (result.data?.byteLength) {
+          const bytes = new Uint8Array(result.data.buffer, result.data.byteOffset, result.data.byteLength);
+          this.consume(decoder.decode(bytes, { stream: true }));
+        }
+      }
+    } catch (error) {
+      if (this.usbReadActive && this.snapshot.status === 'connected') {
+        this.update({ status: 'error', error: this.connectionError(error, 'WebUSB') });
+      }
     }
   }
 
@@ -328,6 +502,22 @@ class ModiWebSerial {
   }
 
   async disconnect(): Promise<void> {
+    if (this.sensorTimer != null) window.clearInterval(this.sensorTimer);
+    this.sensorTimer = null;
+    this.usbReadActive = false;
+    const usbDevice = this.usbDevice;
+    this.usbDevice = null;
+    if (usbDevice) {
+      for (const interfaceNumber of this.usbInterfaceNumbers) {
+        try {
+          await usbDevice.controlTransferOut({ requestType: 'class', recipient: 'interface', request: 0x22, value: 0, index: interfaceNumber });
+        } catch { /* 이미 연결 해제됨 */ }
+      }
+      try { await usbDevice.close(); } catch { /* 이미 연결 해제됨 */ }
+    }
+    this.usbInEndpoint = null;
+    this.usbOutEndpoint = null;
+    this.usbInterfaceNumbers = [];
     const reader = this.reader;
     this.reader = null;
     try { await reader?.cancel(); } catch { /* already closed */ }
@@ -342,10 +532,8 @@ class ModiWebSerial {
     this.buffer = '';
     this.discovering.clear();
     this.sendQueue = Promise.resolve();
-    if (this.sensorTimer != null) window.clearInterval(this.sensorTimer);
-    this.sensorTimer = null;
     this.update({
-      status: serialApi() ? 'idle' : 'unsupported', modules: [], imu: null, dial: null,
+      status: connectionAvailable() ? 'idle' : 'unsupported', modules: [], imu: null, dial: null,
       joystick: null, env: null, tofDistance: null, button: null, buttonPressed: null, error: null,
     });
   }
