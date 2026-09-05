@@ -43,9 +43,19 @@ interface SerialApi {
   addEventListener(type: 'disconnect', listener: (event: Event) => void): void;
 }
 
-const MODI_FILTER = { usbVendorId: 0x2fde, usbProductId: 0x0003 };
+const MODI_USB_IDS = [
+  { usbVendorId: 0x2fde, usbProductId: 0x0003 },
+  { usbVendorId: 0x2fde, usbProductId: 0x0002 },
+  { usbVendorId: 0x0483, usbProductId: 0x5740 },
+] as const;
 const BROADCAST_ID = 0xfff;
 const encoder = new TextEncoder();
+
+function isModiPort(port: SerialPortLike): boolean {
+  const info = port.getInfo?.();
+  return MODI_USB_IDS.some(({ usbVendorId, usbProductId }) =>
+    info?.usbVendorId === usbVendorId && info.usbProductId === usbProductId);
+}
 
 function serialApi(): SerialApi | undefined {
   return (navigator as Navigator & { serial?: SerialApi }).serial;
@@ -109,7 +119,7 @@ class ModiWebSerial {
     if (!api) { this.update({ status: 'unsupported' }); return; }
     this.update({ status: 'connecting', error: null });
     try {
-      this.port = await api.requestPort({ filters: [MODI_FILTER] });
+      this.port = await api.requestPort();
       await this.openPort();
     } catch (error) {
       if ((error as DOMException)?.name === 'NotFoundError') this.update({ status: 'idle' });
@@ -122,10 +132,7 @@ class ModiWebSerial {
     const api = serialApi();
     if (!api || this.port || this.snapshot.status === 'connecting') return;
     const ports = await api.getPorts();
-    const port = ports.find((candidate) => {
-      const info = candidate.getInfo?.();
-      return info?.usbVendorId === MODI_FILTER.usbVendorId && info.usbProductId === MODI_FILTER.usbProductId;
-    });
+    const port = ports.find(isModiPort);
     if (!port) return;
     this.port = port;
     this.update({ status: 'connecting', error: null });
