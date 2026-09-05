@@ -21,12 +21,12 @@ export default function AiLabPage() {
         <div>
           <div style={{ color: t.coralStrong, fontSize: 12, fontWeight: 800, marginBottom: 4, letterSpacing: '.06em' }}>OPEN CREATIVE SPACE</div>
           <h1 style={{ margin: 0, color: t.ink, fontSize: 25, fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.3 }}>AI LAB</h1>
-          <p style={{ marginTop: 5, color: t.muted, fontSize: 13 }}>정해진 강좌나 주제 없이 만들고 싶은 것을 자유롭게 이야기해 보세요.</p>
+          <p style={{ marginTop: 5, color: t.muted, fontSize: 13 }}>AI LAB 명령 입력은 현재 비활성화되어 있습니다.</p>
         </div>
         <Segmented label="만들기 유형" value={labType} options={LAB_OPTIONS} onChange={setLabType} />
       </header>
       <section style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: 12, border: `1px solid ${t.line}`, borderRadius: t.rLg, background: t.surface, boxShadow: t.shSm }}>
-        <VibeCodingTab key={labType} courseType={labType} />
+        <VibeCodingTab key={labType} courseType={labType} inputDisabled />
       </section>
     </main>
   );

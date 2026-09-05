@@ -14,7 +14,11 @@ import { DevelopmentProgress } from './DevelopmentProgress';
 import { runDevelopmentTimeline, type DevelopmentKind, type DevelopmentProgressState } from '../lib/developmentTimeline';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
-interface Props { courseType?: CourseType; onResult?: (r: VibeResult) => void; }
+interface Props {
+  courseType?: CourseType;
+  onResult?: (r: VibeResult) => void;
+  inputDisabled?: boolean;
+}
 
 const CODE_TABS: { key: keyof CodeLangs; label: string; lang: string }[] = [
   { key: 'python', label: 'main.py', lang: 'python' },
@@ -81,7 +85,7 @@ function Hi({ code, lang }: { code: string; lang: string }) {
   );
 }
 
-export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
+export default function VibeCodingTab({ courseType = 'HW', onResult, inputDisabled = false }: Props) {
   const codingType: CodingType = courseType === 'SW' ? 'react' : courseType === 'HW_SW' ? 'hybrid' : 'blockly';
   const isReact = codingType === 'react';
   const isHybrid = codingType === 'hybrid';
@@ -114,7 +118,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
 
   const send = async () => {
     const msg = input.trim();
-    if (!msg || busy || implemented) return;
+    if (!msg || busy || implemented || inputDisabled) return;
     setInput('');
     setBusy(true);
     setStatus('');
@@ -185,7 +189,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const activeCode = code[codeTab] ?? '';
   const hasWeb = !!webFiles && Object.keys(webFiles).length > 0;
   const examples = isReact ? EXAMPLES.sw : EXAMPLES.hw;
-  const canSend = !busy && !implemented && input.trim().length > 0;
+  const canSend = !busy && !implemented && !inputDisabled && input.trim().length > 0;
 
   return (
     <div style={{ display: 'flex', height: '100%', gap: 12, minHeight: 0, fontFamily: t.font, color: t.ink }}>
@@ -198,13 +202,17 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
                 <Icon name="sparkle" size={21} />
               </span>
               <div>
-                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>만들고 싶은 것을 설명해 주세요</strong>
-                <span style={{ fontSize: 13, color: t.muted, lineHeight: 1.6 }}>아래 예시를 눌러 시작해도 좋아요.</span>
+                <strong style={{ display: 'block', fontSize: 16, fontWeight: 750, color: t.ink, marginBottom: 4 }}>
+                  {inputDisabled ? 'AI LAB 입력이 비활성화되었습니다' : '만들고 싶은 것을 설명해 주세요'}
+                </strong>
+                <span style={{ fontSize: 13, color: t.muted, lineHeight: 1.6 }}>
+                  {inputDisabled ? '현재 명령을 입력하거나 실행할 수 없습니다.' : '아래 예시를 눌러 시작해도 좋아요.'}
+                </span>
               </div>
               <div style={{ display: 'grid', gap: 6, width: '100%' }}>
                 {examples.map((ex) => (
-                  <button key={ex} type="button" onClick={() => setInput(ex)}
-                    style={{ textAlign: 'left', padding: '10px 13px', border: `1px solid ${t.line}`, borderRadius: 11, background: t.soft, color: t.inkSoft, fontFamily: t.font, fontSize: 13, lineHeight: 1.5, cursor: 'pointer', transition: 'border-color .16s ease, background .16s ease' }}>
+                  <button key={ex} type="button" disabled={inputDisabled} onClick={() => setInput(ex)}
+                    style={{ textAlign: 'left', padding: '10px 13px', border: `1px solid ${t.line}`, borderRadius: 11, background: t.soft, color: inputDisabled ? t.muted : t.inkSoft, fontFamily: t.font, fontSize: 13, lineHeight: 1.5, cursor: inputDisabled ? 'not-allowed' : 'pointer', opacity: inputDisabled ? .55 : 1, transition: 'border-color .16s ease, background .16s ease' }}>
                     {ex}
                   </button>
                 ))}
@@ -247,8 +255,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <textarea
-              value={input} rows={2} disabled={busy || implemented}
-              placeholder={implemented ? '구현이 완료되어 추가 입력이 잠겼습니다' : '만들고 싶은 동작을 설명해주세요'}
+              value={input} rows={2} disabled={busy || implemented || inputDisabled}
+              placeholder={inputDisabled ? 'AI LAB 명령 입력이 비활성화되었습니다' : implemented ? '구현이 완료되어 추가 입력이 잠겼습니다' : '만들고 싶은 동작을 설명해주세요'}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
               /* outline:'none' 을 두면 키보드 포커스가 보이지 않는다 → 전역 :focus-visible 에 맡긴다 */
@@ -259,9 +267,9 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
               <Icon name="send" size={19} />
             </button>
           </div>
-          {implemented && (
-            <div style={{ marginTop: 7, textAlign: 'right', color: t.green, fontSize: 11.5, fontWeight: 700 }}>
-              구현 완료 · 추가 입력 불가
+          {(implemented || inputDisabled) && (
+            <div style={{ marginTop: 7, textAlign: 'right', color: inputDisabled ? t.muted : t.green, fontSize: 11.5, fontWeight: 700 }}>
+              {inputDisabled ? 'AI LAB 명령 입력 비활성화' : '구현 완료 · 추가 입력 불가'}
             </div>
           )}
         </div>

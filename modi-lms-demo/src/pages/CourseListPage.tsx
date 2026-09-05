@@ -35,7 +35,7 @@ export default function CourseListPage() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '18px 0 26px', borderBottom: `1px solid ${t.line}`, flexWrap: 'wrap' }}>
-        <span style={{ color: t.muted, fontSize: 12, fontWeight: 700 }}>학년</span>
+        <span style={{ color: t.muted, fontSize: 12, fontWeight: 700 }}>난이도</span>
         <Chip active={level === '전체'} onClick={() => setLevel('전체')}>전체</Chip>
         {LEVELS.map((item) => <Chip key={item.value} active={level === item.value} onClick={() => setLevel(item.value)}>{item.name}</Chip>)}
         <span style={{ width: 1, height: 20, margin: '0 4px', background: t.line }} />

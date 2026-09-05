@@ -45,7 +45,7 @@ export default function HomePage() {
       </section>
 
       <section style={{ marginBottom: 44 }}>
-        <Kicker>학년별 바로가기</Kicker>
+        <Kicker>난이도별 바로가기</Kicker>
         <div className="grid-levels">
           {LEVELS.map((lv) => (
             <button key={lv.k} type="button" className="lift lift--card" onClick={() => nav(`/courses?level=${lv.value}`)}
