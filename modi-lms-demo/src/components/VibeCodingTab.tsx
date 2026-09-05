@@ -90,6 +90,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const [status, setStatus] = useState('');
   const [development, setDevelopment] = useState<DevelopmentProgressState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [implemented, setImplemented] = useState(false);
   const [code, setCode] = useState<CodeLangs>({});
   const [webFiles, setWebFiles] = useState<Record<string, string> | null>(null);
   const [mode, setMode] = useState<VibeMode>('quick');
@@ -113,7 +114,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
 
   const send = async () => {
     const msg = input.trim();
-    if (!msg || busy) return;
+    if (!msg || busy || implemented) return;
     setInput('');
     setBusy(true);
     setStatus('');
@@ -161,7 +162,10 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
       const result = completedResult as Extract<VibeEvent, { type: 'done' }> | null;
       if (result?.blockly_code_langs) setCode(result.blockly_code_langs);
       if (result?.generated_code) setWebFiles(result.generated_code);
-      if (result) onResult?.(result);
+      if (result) {
+        onResult?.(result);
+        setImplemented(true);
+      }
     } catch (e) {
       ac.abort();
       setMessages((m) => {
@@ -181,7 +185,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const activeCode = code[codeTab] ?? '';
   const hasWeb = !!webFiles && Object.keys(webFiles).length > 0;
   const examples = isReact ? EXAMPLES.sw : EXAMPLES.hw;
-  const canSend = !busy && input.trim().length > 0;
+  const canSend = !busy && !implemented && input.trim().length > 0;
 
   return (
     <div style={{ display: 'flex', height: '100%', gap: 12, minHeight: 0, fontFamily: t.font, color: t.ink }}>
@@ -243,8 +247,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <textarea
-              value={input} rows={2} disabled={busy}
-              placeholder="만들고 싶은 동작을 설명해주세요"
+              value={input} rows={2} disabled={busy || implemented}
+              placeholder={implemented ? '구현이 완료되어 추가 입력이 잠겼습니다' : '만들고 싶은 동작을 설명해주세요'}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
               /* outline:'none' 을 두면 키보드 포커스가 보이지 않는다 → 전역 :focus-visible 에 맡긴다 */
@@ -255,6 +259,11 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
               <Icon name="send" size={19} />
             </button>
           </div>
+          {implemented && (
+            <div style={{ marginTop: 7, textAlign: 'right', color: t.green, fontSize: 11.5, fontWeight: 700 }}>
+              구현 완료 · 추가 입력 불가
+            </div>
+          )}
         </div>
       </div>
 

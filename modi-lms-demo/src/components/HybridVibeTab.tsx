@@ -60,7 +60,7 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
 
   const send = async () => {
     const msg = input.trim();
-    if (!msg || busy) return;
+    if (!msg || busy || matched.length >= cur.keywords.length) return;
     setInput('');
     setBusy(true);
     setStatus('');
@@ -92,8 +92,9 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
     }
   };
 
-  const canSend = !busy && input.trim().length > 0;
   const done = cur.keywords.filter((k) => matched.includes(k.label)).length;
+  const implemented = done >= cur.keywords.length;
+  const canSend = !busy && !implemented && input.trim().length > 0;
 
   return (
     <div style={{ display: 'flex', height: '100%', gap: 12, minHeight: 0, fontFamily: t.font, color: t.ink, textAlign: 'left' }}>
@@ -148,8 +149,8 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
         <div style={{ borderTop: `1px solid ${t.line}`, padding: 12, background: t.surface }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <textarea
-              value={input} rows={2} disabled={busy}
-              placeholder="만들고 싶은 동작을 설명해주세요"
+              value={input} rows={2} disabled={busy || implemented}
+              placeholder={implemented ? '구현이 완료되어 추가 입력이 잠겼습니다' : '만들고 싶은 동작을 설명해주세요'}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
               style={{ flex: 1, resize: 'none', padding: 10, border: `1px solid ${t.line}`, borderRadius: t.rSm, fontFamily: t.font, fontSize: 14, lineHeight: 1.5, color: t.ink, background: t.surface }}
@@ -160,7 +161,7 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
             </button>
           </div>
           <div style={{ marginTop: 6, textAlign: 'right', color: input.length >= MIN_STATIC_PROMPT_LENGTH ? t.green : t.muted, fontSize: 11 }}>
-            자세한 설명 권장 · {input.length} / {MIN_STATIC_PROMPT_LENGTH}자 이상
+            {implemented ? '구현 완료 · 추가 입력 불가' : `자세한 설명 권장 · ${input.length} / ${MIN_STATIC_PROMPT_LENGTH}자 이상`}
           </div>
         </div>
       </div>
