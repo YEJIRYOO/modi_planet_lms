@@ -2,8 +2,10 @@
 const NativeWebSocket = window.WebSocket;
 const sockets = new Set();
 let device = null;
+let ready = false;
 
 const hasModule = (type) => device?.modules?.some((module) => module.type === type) === true;
+const inputReady = () => device?.status === 'connected' && hasModule('imu') && hasModule('joystick') && hasModule('env') && hasModule('button');
 const telemetry = () => ({
   type: 'telemetry',
   connected: true,
@@ -38,7 +40,7 @@ const telemetry = () => ({
 });
 
 const emit = (socket) => {
-  if (socket.readyState === BridgeWebSocket.OPEN && device?.status === 'connected') {
+  if (socket.readyState === BridgeWebSocket.OPEN && inputReady()) {
     socket.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(telemetry()) }));
   }
 };
@@ -88,6 +90,9 @@ window.WebSocket = BridgeWebSocket;
 addEventListener('message', (event) => {
   if (event.origin !== location.origin || event.data?.type !== 'modi-hardware-state') return;
   device = event.data.device;
-  sockets.forEach(emit);
+  const nextReady = inputReady();
+  if (ready && !nextReady) sockets.forEach((socket) => socket.close());
+  ready = nextReady;
+  if (ready) sockets.forEach(emit);
 });
 })();
