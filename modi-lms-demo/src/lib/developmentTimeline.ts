@@ -1,6 +1,6 @@
-export const DEVELOPMENT_BASE_MS = 3 * 60 * 1000;
-export const DEVELOPMENT_RANDOM_MIN_MS = 60 * 1000;
-export const DEVELOPMENT_RANDOM_MAX_MS = 80 * 1000;
+export const DEVELOPMENT_BASE_MS = 30 * 1000;
+export const DEVELOPMENT_RANDOM_MIN_MS = 8 * 1000;
+export const DEVELOPMENT_RANDOM_MAX_MS = 12 * 1000;
 
 export type DevelopmentKind = 'software' | 'hybrid' | 'hardware';
 
