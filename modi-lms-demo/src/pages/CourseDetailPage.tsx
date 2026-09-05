@@ -71,7 +71,7 @@ export default function CourseDetailPage() {
                   <span style={{ width: 22, height: 22, flex: '0 0 22px', display: 'grid', placeItems: 'center', borderRadius: 7, fontSize: 12, fontWeight: 800, color: t.coralStrong, background: t.coralSoft }}>{i + 1}</span>
                   <span style={{ display: 'flex', color: t.muted }}><Icon name={STEP_ICON[tab] ?? 'doc'} size={17} /></span>
                   <strong style={{ fontSize: 14, color: t.ink }}>{tab}</strong>
-                  {tab === '설계문서' && (
+                  {tab === '설계문서' && (!teacher || course.guidePdfUrl) && (
                     <button type="button" onClick={() => setDoc(teacher ? 'plan' : 'doc')}
                       style={{ fontFamily: t.font, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 3, cursor: 'pointer', border: 0, background: 'transparent', color: t.coralStrong, fontWeight: 700, fontSize: 13 }}>
                       미리보기 <Icon name="chevronRight" size={13} />
@@ -89,7 +89,7 @@ export default function CourseDetailPage() {
           <div style={{ fontSize: 13, color: t.muted }}>완성물 · <strong style={{ color: t.inkSoft }}>{course.goal}</strong></div>
           {teacher ? (
             <>
-              <Btn full onClick={() => setDoc('plan')}>교안 보기</Btn>
+              {course.guidePdfUrl && <Btn full onClick={() => setDoc('plan')}>교안 보기</Btn>}
               <Btn full variant="soft" onClick={start}>수업 시작</Btn>
               <div style={{ fontSize: 12, color: t.muted, textAlign: 'center', lineHeight: 1.6 }}>학급 계정은 수강 완료 대신 수업용 흐름을 사용해요.</div>
             </>

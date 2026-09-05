@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { t } from '../styles/tokens';
 import { TypeBadge, EmptyState, Btn } from '../components/ui';
 import { Icon } from '../components/icons';
+import { TeacherGuideViewer } from '../components/TeacherGuideViewer';
 
 export default function LearningPage() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function LearningPage() {
   const course = findCourse(id);
   const role = localStorage.getItem('demo_role') || 'student';
   const [done, setDone] = useState(() => (id ? getStatus(id) === 'done' : false));
+  const [guideOpen, setGuideOpen] = useState(false);
 
   if (!course) return (
     <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 40, fontFamily: t.font, background: t.warm }}>
@@ -51,6 +53,22 @@ export default function LearningPage() {
         {/* 예전엔 course.type 을 그대로 찍어 융합 강좌가 "HW_SW" 로 보였다 → 배지로 통일 */}
         <TypeBadge type={course.type} />
 
+        {role === 'teacher' && course.guidePdfUrl && (
+          <button
+            type="button"
+            className="lift lift--sm"
+            onClick={() => setGuideOpen(true)}
+            style={{
+              marginLeft: 'auto', minHeight: 38, padding: '0 14px', display: 'inline-flex',
+              alignItems: 'center', gap: 7, border: `1px solid ${t.lineStrong}`,
+              borderRadius: t.rSm, background: t.surface, color: t.ink, cursor: 'pointer',
+              fontFamily: t.font, fontSize: 13, fontWeight: 750,
+            }}
+          >
+            <Icon name="doc" size={16} /> 교안 확인
+          </button>
+        )}
+
         {/* 수강 완료: 학생만 (교사는 버튼 없음 — 유저플로우 규칙) */}
         {role === 'student' && (
           <div style={{ marginLeft: 'auto' }}>
@@ -79,6 +97,8 @@ export default function LearningPage() {
       }}>
         <LearningTabs courseType={course.type} courseId={course.id} courseTitle={course.title} locale="ko" project={course.project} />
       </div>
+
+      {guideOpen && <TeacherGuideViewer course={course} onClose={() => setGuideOpen(false)} />}
     </div>
   );
 }
