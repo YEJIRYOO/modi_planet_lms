@@ -10,6 +10,8 @@ import HybridPreview from './HybridPreview';
 import { t } from '../styles/tokens';
 import { Segmented, EmptyState } from './ui';
 import { Icon } from './icons';
+import { DevelopmentProgress } from './DevelopmentProgress';
+import { runDevelopmentTimeline, type DevelopmentKind, type DevelopmentProgressState } from '../lib/developmentTimeline';
 
 interface Msg { role: 'user' | 'assistant'; text: string; }
 interface Props { courseType?: CourseType; onResult?: (r: VibeResult) => void; }
@@ -86,6 +88,7 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState('');
+  const [development, setDevelopment] = useState<DevelopmentProgressState | null>(null);
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState<CodeLangs>({});
   const [webFiles, setWebFiles] = useState<Record<string, string> | null>(null);
@@ -94,8 +97,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
   const [codeTab, setCodeTab] = useState<keyof CodeLangs>('python');
 
   const sessionId = useRef(crypto.randomUUID?.() ?? `demo-${Date.now()}`);
-  const resetBuf = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   /* 예전에는 자동 스크롤이 없어 응답이 길어지면 화면 밖으로 밀려났다.
      사용자가 위로 올려 읽는 중이면 방해하지 않도록, 바닥 근처일 때만 따라간다. */
@@ -104,7 +107,9 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
     if (!el) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     if (nearBottom) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
+  }, [messages, status, development]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const send = async () => {
     const msg = input.trim();
@@ -112,38 +117,53 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
     setInput('');
     setBusy(true);
     setStatus('');
-    resetBuf.current = false;
+    setDevelopment(null);
     setMessages((m) => [...m, { role: 'user', text: msg }, { role: 'assistant', text: '' }]);
 
+    const ac = new AbortController();
+    abortRef.current = ac;
+    let bufferedReply = '';
+    let resetOnNextToken = false;
+    let completedResult: Extract<VibeEvent, { type: 'done' }> | null = null;
+
     const onEvent = (ev: VibeEvent) => {
-      if (ev.type === 'status') { setStatus(ev.message ?? ''); return; }
       if (ev.type === 'agent_step' || ev.type === 'agent_step_update' || ev.type === 'blockly_ready') {
-        resetBuf.current = true;
+        resetOnNextToken = true;
         return;
       }
       if (ev.type === 'token') {
-        const reset = resetBuf.current;
-        resetBuf.current = false;
-        const tk = ev.text ?? '';
-        setMessages((m) => {
-          const c = m.slice();
-          const last = c[c.length - 1];
-          if (last?.role === 'assistant') c[c.length - 1] = { ...last, text: (reset ? '' : last.text) + tk };
-          return c;
-        });
+        bufferedReply = (resetOnNextToken ? '' : bufferedReply) + (ev.text ?? '');
+        resetOnNextToken = false;
         return;
       }
       if (ev.type === 'done') {
-        if (ev.blockly_code_langs) setCode(ev.blockly_code_langs);
-        if (ev.generated_code) setWebFiles(ev.generated_code);
-        onResult?.(ev);
-        setStatus('');
+        completedResult = ev;
       }
     };
 
     try {
-      await streamChat({ sessionId: sessionId.current, message: msg, mode, codingType }, onEvent);
+      const developmentKind: DevelopmentKind = codingType === 'react' ? 'software' : codingType === 'hybrid' ? 'hybrid' : 'hardware';
+      await Promise.all([
+        streamChat({ sessionId: sessionId.current, message: msg, mode, codingType, signal: ac.signal }, onEvent),
+        runDevelopmentTimeline(developmentKind, (value) => {
+          setDevelopment(value);
+          setStatus(value.label);
+        }, ac.signal),
+      ]);
+
+      if (ac.signal.aborted) return;
+      setMessages((m) => {
+        const c = m.slice();
+        const last = c[c.length - 1];
+        if (last?.role === 'assistant') c[c.length - 1] = { ...last, text: bufferedReply || '요청한 기능의 개발과 검증을 완료했습니다.' };
+        return c;
+      });
+      const result = completedResult as Extract<VibeEvent, { type: 'done' }> | null;
+      if (result?.blockly_code_langs) setCode(result.blockly_code_langs);
+      if (result?.generated_code) setWebFiles(result.generated_code);
+      if (result) onResult?.(result);
     } catch (e) {
+      ac.abort();
       setMessages((m) => {
         const c = m.slice();
         const last = c[c.length - 1];
@@ -152,6 +172,8 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
       });
     } finally {
       setBusy(false);
+      setStatus('');
+      setDevelopment(null);
     }
   };
 
@@ -203,12 +225,13 @@ export default function VibeCodingTab({ courseType = 'HW', onResult }: Props) {
               </div>
             );
           })}
-          {status && (
+          {status && !development && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.muted, fontSize: 13 }}>
               <span className="typing" aria-hidden="true"><span /><span /><span /></span>
               {status}
             </div>
           )}
+          {development && <DevelopmentProgress state={development} />}
         </div>
 
         <div style={{ borderTop: `1px solid ${t.line}`, padding: 12, background: t.surface }}>

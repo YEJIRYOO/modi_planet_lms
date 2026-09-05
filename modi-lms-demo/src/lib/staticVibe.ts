@@ -6,6 +6,7 @@
    화면 쪽 코드가 실제 스트리밍과 구분되지 않게 했다. */
 
 import type { HybridKeyword } from '../data/hybridCurriculum';
+import { runDevelopmentTimeline, type DevelopmentKind, type DevelopmentProgressState } from './developmentTimeline';
 
 export interface StaticVibeCurriculum {
   examples: string[];
@@ -18,6 +19,7 @@ export const MIN_STATIC_PROMPT_LENGTH = 80;
 
 export type StaticVibeEvent =
   | { type: 'status'; message: string }
+  | { type: 'progress'; value: DevelopmentProgressState }
   | { type: 'token'; text: string }
   | { type: 'done'; matched: string[]; unlocked: boolean };
 
@@ -43,19 +45,6 @@ function matchKeywords(cur: StaticVibeCurriculum, text: string, already: string[
     .filter((k) => k.synonyms.some((s) => hay.includes(normalize(s))))
     .map((k) => k.label);
 }
-
-/* 진행 상황 문구. 실제로는 아무 일도 안 하지만 생성 과정을 보여 주는 역할. */
-const STATUSES = [
-  '요청을 이해하는 중',
-  '필요한 MODI 모듈을 확인하는 중',
-  '핵심 개념을 정리하는 중',
-];
-const STATUSES_UNLOCK = [
-  '요청을 이해하는 중',
-  '동작 흐름을 정리하는 중',
-  '코드를 작성하는 중',
-  '실행 준비를 확인하는 중',
-];
 
 /** 응답 본문을 조립한다. */
 function composeReply(cur: StaticVibeCurriculum, newly: string[], matchedAll: string[]): string {
@@ -105,6 +94,7 @@ export async function runStaticTurn(
   already: string[],
   onEvent: (e: StaticVibeEvent) => void,
   signal?: AbortSignal,
+  developmentKind: DevelopmentKind = 'hybrid',
 ): Promise<StaticTurnResult> {
   const tooShort = message.trim().length < MIN_STATIC_PROMPT_LENGTH;
   const newly = tooShort ? [] : matchKeywords(cur, message, already);
@@ -121,16 +111,14 @@ export async function runStaticTurn(
     return { matched, unlocked };
   }
 
-  const statuses = cur.promptTitle
-    ? unlocked
-      ? ['요청을 이해하는 중', '핵심 기능을 연결하는 중', '미리보기를 준비하는 중']
-      : ['요청을 이해하는 중', '프로젝트 기능을 확인하는 중', '핵심 개념을 정리하는 중']
-    : unlocked ? STATUSES_UNLOCK : STATUSES;
-  for (const s of statuses) {
-    if (signal?.aborted) break;
-    onEvent({ type: 'status', message: s });
-    await sleep(420 + Math.random() * 380);
-  }
+  await runDevelopmentTimeline(
+    developmentKind,
+    (value) => {
+      onEvent({ type: 'status', message: value.label });
+      onEvent({ type: 'progress', value });
+    },
+    signal,
+  );
 
   if (!signal?.aborted) {
     await streamText(composeReply(cur, newly, matched), onEvent, signal);

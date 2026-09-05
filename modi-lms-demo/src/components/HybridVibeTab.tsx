@@ -5,6 +5,8 @@ import type { Components } from 'react-markdown';
 import { MIN_STATIC_PROMPT_LENGTH, runStaticTurn, type StaticVibeCurriculum } from '../lib/staticVibe';
 import { t } from '../styles/tokens';
 import { Icon } from './icons';
+import { DevelopmentProgress } from './DevelopmentProgress';
+import type { DevelopmentProgressState } from '../lib/developmentTimeline';
 
 /* HW+SW 바이브 코딩 탭.
    화면은 기존 VibeCodingTab 과 같은 모양이지만 백엔드를 호출하지 않는다.
@@ -39,6 +41,7 @@ const md: Components = {
 export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState('');
+  const [development, setDevelopment] = useState<DevelopmentProgressState | null>(null);
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
     if (!el) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     if (nearBottom) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
+  }, [messages, status, development]);
 
   /* 탭을 떠나거나 강좌가 바뀌면 진행 중인 타이핑을 끊는다. */
   useEffect(() => () => abort.current?.abort(), []);
@@ -61,6 +64,7 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
     setInput('');
     setBusy(true);
     setStatus('');
+    setDevelopment(null);
     setMessages((m) => [...m, { role: 'user', text: msg }, { role: 'assistant', text: '' }]);
 
     const ac = new AbortController();
@@ -77,12 +81,14 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
     try {
       await runStaticTurn(cur, msg, matched, (ev) => {
         if (ev.type === 'status') { setStatus(ev.message); return; }
+        if (ev.type === 'progress') { setDevelopment(ev.value); return; }
         if (ev.type === 'token') { setStatus(''); append(ev.text); return; }
-        if (ev.type === 'done') { onProgress(ev.matched, ev.unlocked); setStatus(''); }
-      }, ac.signal);
+        if (ev.type === 'done') { onProgress(ev.matched, ev.unlocked); setStatus(''); setDevelopment(null); }
+      }, ac.signal, hasCode ? 'hybrid' : 'software');
     } finally {
       setBusy(false);
       setStatus('');
+      setDevelopment(null);
     }
   };
 
@@ -130,12 +136,13 @@ export default function HybridVibeTab({ cur, matched, onProgress, hasCode = true
               </div>
             );
           })}
-          {status && (
+          {status && !development && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.muted, fontSize: 13 }}>
               <span className="typing" aria-hidden="true"><span /><span /><span /></span>
               {status}
             </div>
           )}
+          {development && <DevelopmentProgress state={development} />}
         </div>
 
         <div style={{ borderTop: `1px solid ${t.line}`, padding: 12, background: t.surface }}>
